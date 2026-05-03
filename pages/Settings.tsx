@@ -36,6 +36,9 @@ const Settings: React.FC<{ user: User }> = ({ user }) => {
   const [logoUrl, setLogoUrl] = useState<string>('');
   const [pwaIconUrl, setPwaIconUrl] = useState<string>('');
   const [imgbbKey, setImgbbKey] = useState<string>('');
+  const [bankName, setBankName] = useState<string>('');
+  const [bankAccountName, setBankAccountName] = useState<string>('');
+  const [bankAccountNumber, setBankAccountNumber] = useState<string>('');
   const [isUploadingLogo, setIsUploadingLogo] = useState(false);
   
   // Ticket Sequence Settings
@@ -87,6 +90,9 @@ const Settings: React.FC<{ user: User }> = ({ user }) => {
     setLogoUrl(s.logoUrl || '');
     setPwaIconUrl(s.pwaIconUrl || '');
     setImgbbKey(s.imgbbKey || '');
+    setBankName(s.bankName || '');
+    setBankAccountName(s.bankAccountName || '');
+    setBankAccountNumber(s.bankAccountNumber || '');
     setAllProducts(p);
     setCoupons(c);
     setLoading(false);
@@ -143,7 +149,10 @@ const Settings: React.FC<{ user: User }> = ({ user }) => {
               nextTicketSequence: nextSeq,
               logoUrl: logoUrl,
               pwaIconUrl: pwaIconUrl,
-              imgbbKey: imgbbKey
+              imgbbKey: imgbbKey,
+              bankName: bankName.toUpperCase(),
+              bankAccountName: bankAccountName.toUpperCase(),
+              bankAccountNumber: bankAccountNumber
           });
           alert("Ajustes guardados. Si cambió el icono PWA, recargue la página.");
           loadData(); // Reload to ensure sync
@@ -500,6 +509,32 @@ const Settings: React.FC<{ user: User }> = ({ user }) => {
                                 * SI ESTÁ PRESENTE, LAS IMÁGENES SE SUBIRÁN A IMGBB EN LUGAR DE FIREBASE STORAGE.
                                 <a href="https://api.imgbb.com/" target="_blank" rel="noreferrer" className="ml-1 underline">OBTENER API KEY AQUÍ</a>
                             </p>
+                        </div>
+
+                        {/* BANK SETTINGS FOR TRANSFERS */}
+                        <div className="bg-slate-100 p-4 rounded-2xl border border-slate-200">
+                            <label className="text-xs font-black text-slate-600 uppercase mb-3 block">DATOS BANCARIOS PARA TRANSFERENCIAS</label>
+                            <div className="space-y-3">
+                                <Input 
+                                    label="BANCO"
+                                    value={bankName}
+                                    onChange={(e) => setBankName(e.target.value.toUpperCase())}
+                                    placeholder="EJ. BBVA, SANTANDER, BANCOPPEL"
+                                />
+                                <Input 
+                                    label="NOMBRE DEL TITULAR"
+                                    value={bankAccountName}
+                                    onChange={(e) => setBankAccountName(e.target.value.toUpperCase())}
+                                    placeholder="NOMBRE COMPLETO"
+                                />
+                                <Input 
+                                    label="NÚMERO DE TARJETA / CLABE"
+                                    value={bankAccountNumber}
+                                    onChange={(e) => setBankAccountNumber(e.target.value)}
+                                    placeholder="0000 0000 0000 0000"
+                                />
+                                <p className="text-[9px] text-slate-500 uppercase font-bold">* ESTOS DATOS SE MOSTRARÁN AL CLIENTE CUANDO SE SELECCIONE PAGO CON TRANSFERENCIA.</p>
+                            </div>
                         </div>
                     </div>
 

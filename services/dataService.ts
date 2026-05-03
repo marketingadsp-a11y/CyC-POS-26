@@ -624,7 +624,10 @@ export const getSystemSettings = async (): Promise<SystemSettings> => {
           nextTicketSequence: data.nextTicketSequence || 1,
           logoUrl: data.logoUrl || '',
           pwaIconUrl: data.pwaIconUrl || '',
-          imgbbKey: data.imgbbKey || ''
+          imgbbKey: data.imgbbKey || '',
+          bankName: data.bankName || '',
+          bankAccountName: data.bankAccountName || '',
+          bankAccountNumber: data.bankAccountNumber || ''
       } as SystemSettings;
     } else {
       // Return default
@@ -639,7 +642,10 @@ export const getSystemSettings = async (): Promise<SystemSettings> => {
           nextTicketSequence: 1,
           logoUrl: '',
           pwaIconUrl: '',
-          imgbbKey: ''
+          imgbbKey: '',
+          bankName: '',
+          bankAccountName: '',
+          bankAccountNumber: ''
       };
     }
   } catch (e) {
@@ -655,7 +661,10 @@ export const getSystemSettings = async (): Promise<SystemSettings> => {
         nextTicketSequence: 1,
         logoUrl: '',
         pwaIconUrl: '',
-        imgbbKey: ''
+        imgbbKey: '',
+        bankName: '',
+        bankAccountName: '',
+        bankAccountNumber: ''
     };
   }
 }
@@ -709,7 +718,10 @@ export const performFactoryReset = async () => {
             nextTicketSequence: 1,
             logoUrl: '',
             pwaIconUrl: '',
-            imgbbKey: ''
+            imgbbKey: '',
+            bankName: '',
+            bankAccountName: '',
+            bankAccountNumber: ''
         };
         await setDoc(doc(db, "settings", "global"), defaultSettings);
 

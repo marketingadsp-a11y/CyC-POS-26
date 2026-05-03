@@ -80,7 +80,8 @@ const POS: React.FC<POSProps> = ({ onOpenQuickAdd }) => {
     
     // Payment Form
     const [amountPaid, setAmountPaid] = useState('');
-    const [paymentMethod, setPaymentMethod] = useState<'cash' | 'card' | 'transfer'>('cash');
+    const [paymentMethod, setPaymentMethod] = useState<'cash' | 'card' | 'transfer' | 'other'>('cash');
+    const [showFullBankCard, setShowFullBankCard] = useState(false);
     
     // Discount
     const [appliedDiscount, setAppliedDiscount] = useState<{amount: number, reason: string} | null>(null);
@@ -393,9 +394,14 @@ const POS: React.FC<POSProps> = ({ onOpenQuickAdd }) => {
     };
 
     // --- CARD FEE LOGIC ---
-    const handlePaymentMethodChange = (method: 'cash' | 'card' | 'transfer') => {
+    const handlePaymentMethodChange = (method: 'cash' | 'card' | 'transfer' | 'other') => {
         setPaymentMethod(method);
         
+        // Auto-fill amount paid for transfer/card if not already set or if it was 0
+        if ((method === 'transfer' || method === 'card') && (!amountPaid || parseFloat(amountPaid) === 0)) {
+            setAmountPaid(total.toFixed(2));
+        }
+
         setCart(prevCart => {
             // 1. Remove existing card fee to calculate base total correctly
             const cleanCart = prevCart.filter(i => i.cartId !== 'CARD_FEE_SERVICE');
@@ -1252,7 +1258,7 @@ const POS: React.FC<POSProps> = ({ onOpenQuickAdd }) => {
             </Modal>
 
             {/* PAYMENT MODAL - Two Column Layout for iPad */}
-            <Modal isOpen={showPaymentModal} onClose={() => handleClosePayment()} title={isApartadoMode ? "CONFIRMAR APARTADO" : "FINALIZAR VENTA"} maxWidth="max-w-4xl">
+            <Modal isOpen={showPaymentModal} onClose={() => handleClosePayment()} title={isApartadoMode ? "CONFIRMAR APARTADO" : "FINALIZAR VENTA"} maxWidth="max-w-[1500px]">
                  <div className="flex flex-col md:flex-row gap-6">
                     {/* LEFT SIDE: Payment Methods & Info */}
                     <div className="flex-1 space-y-6">
@@ -1307,42 +1313,106 @@ const POS: React.FC<POSProps> = ({ onOpenQuickAdd }) => {
                         </div>
                     </div>
 
-                    {/* RIGHT SIDE: Keypad & Received Money */}
+                    {/* RIGHT SIDE: Keypad or Bank Card */}
                     <div className="flex-1 bg-slate-900 p-6 rounded-[2.5rem] shadow-2xl relative overflow-hidden flex flex-col border border-slate-800">
                         <div className="absolute top-2 right-6 text-white/5 font-black text-7xl italic select-none">POS</div>
                         
-                        <div className="mb-6 relative z-10">
-                            <label className="text-[10px] font-black text-indigo-400 uppercase tracking-widest block mb-2 text-center">
-                                {isApartadoMode ? 'ANTICIPO RECIBIDO' : 'TECLEE DINERO RECIBIDO'}
-                            </label>
-                            <div className="text-center flex items-center justify-center gap-2">
-                                <span className="text-indigo-400 text-2xl font-black">$</span>
-                                <span className="text-5xl font-black text-white font-mono tracking-tighter">
-                                    {amountPaid || '0'}
-                                </span>
-                                <motion.span 
-                                    animate={{ opacity: [0, 1, 0] }}
-                                    transition={{ duration: 0.8, repeat: Infinity }}
-                                    className="inline-block w-1 h-10 bg-indigo-500 ml-1 align-middle"
-                                />
-                            </div>
-                        </div>
+                        {paymentMethod === 'transfer' ? (
+                            /* TRANSFER MODE: BANK CARD VIEW */
+                            <div className="relative z-10 flex flex-col h-full">
+                                <div className="text-center mb-6">
+                                    <label className="text-[10px] font-black text-indigo-400 uppercase tracking-widest block mb-4">
+                                        MUESTRA LA SIGUIENTE TARJETA AL CLIENTE PARA REALIZAR LA TRANSFERENCIA
+                                    </label>
+                                    
+                                    <div className="bg-gradient-to-br from-indigo-600 to-indigo-900 rounded-3xl p-6 text-white shadow-xl relative overflow-hidden text-left aspect-[1.6/1]">
+                                        <div className="absolute top-0 right-0 p-8 opacity-10">
+                                            <Banknote className="w-32 h-32" />
+                                        </div>
+                                        <div className="flex justify-between items-start mb-6">
+                                            <span className="text-xl font-black italic tracking-widest uppercase">{settings?.bankName || 'BANCO'}</span>
+                                            <div className="w-12 h-10 bg-amber-400 rounded-md opacity-80" />
+                                        </div>
+                                        <div className="mb-6">
+                                            <div className="text-[10px] opacity-60 uppercase mb-1">Número de Tarjeta / CLABE</div>
+                                            <div className="text-xl font-mono tracking-widest font-bold">{settings?.bankAccountNumber || '0000 0000 0000 0000'}</div>
+                                        </div>
+                                        <div className="flex justify-between items-end mt-auto">
+                                            <div>
+                                                <div className="text-[10px] opacity-60 uppercase mb-1">Titular</div>
+                                                <div className="text-sm font-bold uppercase line-clamp-1">{settings?.bankAccountName || 'TITULAR DE LA CUENTA'}</div>
+                                            </div>
+                                            <div className="text-right shrink-0">
+                                                <div className="text-[10px] opacity-60 uppercase mb-1">Tipo</div>
+                                                <div className="text-xs font-bold uppercase">Transfer</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
 
-                        <div className="grid grid-cols-3 gap-2 mb-6 relative z-10">
-                            {[1, 2, 3, 4, 5, 6, 7, 8, 9, '.', 0, 'BACK'].map((key) => (
-                                <button
-                                    key={key.toString()}
-                                    onClick={() => handleKeypadPress(key.toString(), amountPaid, setAmountPaid)}
-                                    className={`h-14 rounded-2xl flex items-center justify-center text-xl font-bold transition-all active:scale-95 ${
-                                        key === 'BACK' 
-                                        ? 'bg-rose-500/20 text-rose-400 border border-rose-500/30 hover:bg-rose-500/30' 
-                                        : 'bg-white/5 text-white border border-white/5 hover:bg-white/10'
-                                    }`}
-                                >
-                                    {key === 'BACK' ? <Delete className="w-6 h-6" /> : key}
-                                </button>
-                            ))}
-                        </div>
+                                <div className="flex gap-2 mb-6">
+                                    <Button 
+                                        variant="ghost" 
+                                        onClick={() => setShowFullBankCard(true)}
+                                        className="flex-1 bg-white/5 hover:bg-white/10 text-white uppercase text-[10px] font-black border border-white/5"
+                                    >
+                                        <Smartphone className="w-5 h-5 mr-2 text-indigo-400" /> MOSTRAR EN PANTALLA COMPLETA
+                                    </Button>
+                                </div>
+
+                                {isApartadoMode && (
+                                    <div className="mb-6 p-4 bg-white/5 border border-white/10 rounded-2xl">
+                                        <label className="text-[10px] font-black text-indigo-400 uppercase tracking-widest block mb-2 text-center">CONFIRMAR MONTO DE ANTICIPO</label>
+                                        <div className="flex items-center justify-center gap-2">
+                                            <span className="text-white text-xl font-mono">$</span>
+                                            <input 
+                                                type="number"
+                                                value={amountPaid}
+                                                onChange={(e) => setAmountPaid(e.target.value)}
+                                                className="bg-transparent text-white text-3xl font-black font-mono w-32 text-center outline-none"
+                                                placeholder="0.00"
+                                            />
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        ) : (
+                            /* NORMAL MODE: KEYPAD */
+                            <>
+                                <div className="mb-6 relative z-10">
+                                    <label className="text-[10px] font-black text-indigo-400 uppercase tracking-widest block mb-2 text-center">
+                                        {isApartadoMode ? 'ANTICIPO RECIBIDO' : 'TECLEE DINERO RECIBIDO'}
+                                    </label>
+                                    <div className="text-center flex items-center justify-center gap-2">
+                                        <span className="text-indigo-400 text-2xl font-black">$</span>
+                                        <span className="text-5xl font-black text-white font-mono tracking-tighter">
+                                            {amountPaid || '0'}
+                                        </span>
+                                        <motion.span 
+                                            animate={{ opacity: [0, 1, 0] }}
+                                            transition={{ duration: 0.8, repeat: Infinity }}
+                                            className="inline-block w-1 h-10 bg-indigo-500 ml-1 align-middle"
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="grid grid-cols-3 gap-2 mb-6 relative z-10">
+                                    {[1, 2, 3, 4, 5, 6, 7, 8, 9, '.', 0, 'BACK'].map((key) => (
+                                        <button
+                                            key={key.toString()}
+                                            onClick={() => handleKeypadPress(key.toString(), amountPaid, setAmountPaid)}
+                                            className={`h-14 rounded-2xl flex items-center justify-center text-xl font-bold transition-all active:scale-95 ${
+                                                key === 'BACK' 
+                                                ? 'bg-rose-500/20 text-rose-400 border border-rose-500/30 hover:bg-rose-500/30' 
+                                                : 'bg-white/5 text-white border border-white/5 hover:bg-white/10'
+                                            }`}
+                                        >
+                                            {key === 'BACK' ? <Delete className="w-6 h-6" /> : key}
+                                        </button>
+                                    ))}
+                                </div>
+                            </>
+                        )}
 
                         <div className="mt-auto space-y-4 relative z-10">
                             {!isApartadoMode && paymentMethod === 'cash' && amountPaid && parseFloat(amountPaid) >= total && (
@@ -1368,6 +1438,44 @@ const POS: React.FC<POSProps> = ({ onOpenQuickAdd }) => {
                             </div>
                         </div>
                     </div>
+                 </div>
+            </Modal>
+
+            {/* FULL SCREEN BANK CARD MODAL */}
+            <Modal isOpen={showFullBankCard} onClose={() => setShowFullBankCard(false)} title="DATOS BANCARIOS" maxWidth="max-w-4xl">
+                <div className="flex flex-col items-center py-8">
+                    <div className="bg-gradient-to-br from-indigo-700 to-slate-900 w-full max-w-2xl rounded-[3rem] p-12 text-white shadow-2xl relative overflow-hidden ring-8 ring-indigo-50">
+                        <div className="absolute top-0 right-0 p-16 opacity-10">
+                            <Banknote className="w-80 h-80" />
+                        </div>
+                        <div className="flex justify-between items-start mb-16">
+                            <span className="text-4xl font-black italic tracking-widest uppercase">{settings?.bankName || 'BANCO'}</span>
+                            <div className="w-20 h-16 bg-amber-400 rounded-xl shadow-lg opacity-90" />
+                        </div>
+                        <div className="mb-20">
+                            <div className="text-sm opacity-60 uppercase mb-4 tracking-widest font-black">Número de Tarjeta / CLABE</div>
+                            <div className="text-4xl md:text-5xl font-mono tracking-[0.1em] font-black drop-shadow-lg">
+                                {settings?.bankAccountNumber || '0000 0000 0000 0000'}
+                            </div>
+                        </div>
+                        <div className="flex justify-between items-end">
+                            <div>
+                                <div className="text-sm opacity-60 uppercase mb-2 tracking-widest font-black">Titular de la Cuenta</div>
+                                <div className="text-2xl font-black uppercase tracking-tight">{settings?.bankAccountName || 'TITULAR'}</div>
+                            </div>
+                            <div className="text-right">
+                                <div className="text-sm opacity-60 uppercase mb-2 tracking-widest font-black">Importe Total</div>
+                                <div className="text-4xl font-black">${total.toFixed(2)}</div>
+                            </div>
+                        </div>
+                    </div>
+                    <p className="mt-12 text-slate-400 font-bold uppercase tracking-widest text-sm">ESCANEÉ O TECLEE LOS DATOS PARA TRANSFERIR</p>
+                    <Button 
+                        onClick={() => setShowFullBankCard(false)}
+                        className="mt-8 py-4 px-12 bg-slate-900 text-white rounded-full uppercase font-black tracking-widest text-lg"
+                    >
+                        CERRAR VISTA
+                    </Button>
                 </div>
             </Modal>
 

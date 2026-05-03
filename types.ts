@@ -70,6 +70,9 @@ export interface SystemSettings {
   logoUrl?: string; // New: Logo URL for POS empty state
   pwaIconUrl?: string; // New: Logo URL for PWA Manifest and Favicon
   imgbbKey?: string; // New: API Key for ImgBB integrations
+  bankName?: string; // New: Bank name for transfers
+  bankAccountName?: string; // New: Account holder name for transfers
+  bankAccountNumber?: string; // New: Account number for transfers
 }
 
 export interface Expense {
