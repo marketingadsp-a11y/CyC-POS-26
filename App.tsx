@@ -606,33 +606,41 @@ const App: React.FC = () => {
           if (!settings) return;
           try {
               const iconUrl = settings.pwaIconUrl;
+              const appName = settings.businessName || "CyC POS 26";
+
+              // 1. Update Title & Apple Meta Tags
+              document.title = appName;
+              const appleTitle = document.getElementById('apple-app-title');
+              if (appleTitle) appleTitle.setAttribute('content', appName);
 
               if (iconUrl) {
-                  // 1. Update Favicon & Apple Icon
+                  // 2. Update Favicon & Apple Icon
                   const favicon = document.getElementById('app-icon') as HTMLLinkElement;
                   const appleIcon = document.getElementById('app-apple-icon') as HTMLLinkElement;
                   if(favicon) favicon.href = iconUrl;
                   if(appleIcon) appleIcon.href = iconUrl;
 
-                  // 2. Generate Dynamic Manifest
+                  // 3. Generate Dynamic Manifest
                   const dynamicManifest = {
-                      name: "CyC POS 26",
-                      short_name: "CyC POS",
+                      name: appName,
+                      short_name: appName.substring(0, 12),
                       start_url: ".",
                       display: "standalone",
                       background_color: "#f3f4f6",
                       theme_color: "#4f46e5",
-                      description: "Sistema de Punto de Venta para Disfraces",
+                      description: `Sistema de Punto de Venta para ${appName}`,
                       icons: [
                           {
                               src: iconUrl,
                               sizes: "192x192",
-                              type: "image/png"
+                              type: "image/png",
+                              purpose: "any maskable"
                           },
                           {
                               src: iconUrl,
                               sizes: "512x512",
-                              type: "image/png"
+                              type: "image/png",
+                              purpose: "any maskable"
                           }
                       ]
                   };
@@ -652,7 +660,7 @@ const App: React.FC = () => {
       };
 
       applyPWASettings();
-  }, []); // Run once on mount
+  }, [settings]); // Depend on settings so it updates when they load
 
   useEffect(() => {
     if (!user || !user.id) return;
