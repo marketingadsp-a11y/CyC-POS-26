@@ -1,7 +1,8 @@
 
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Search, ShoppingCart, User, Calendar, Trash2, Plus, Minus, X, CreditCard, Banknote, ArrowUpRight, Tag, RotateCcw, UserPlus, Save, ArrowLeft, LayoutGrid, ListFilter, Percent, ChevronLeft, Box, DollarSign, Layers, Shirt, Clock, Pencil, MapPin, CheckCircle, Printer, RefreshCw, AlertTriangle, Smartphone } from 'lucide-react';
+import { Search, ShoppingCart, User, Calendar, Trash2, Plus, Minus, X, CreditCard, Banknote, ArrowUpRight, Tag, RotateCcw, UserPlus, Save, ArrowLeft, LayoutGrid, ListFilter, Percent, ChevronLeft, Box, DollarSign, Layers, Shirt, Clock, Pencil, MapPin, CheckCircle, Printer, RefreshCw, AlertTriangle, Smartphone, Delete } from 'lucide-react';
+import { motion } from 'motion/react';
 import { Button, Input, Modal, DatePickerModal, Badge, ReceiptTemplate } from '../components/UI';
 import { Product, Customer, CartItem, Variation, Coupon, Category, SystemSettings, Order } from '../types';
 import { getProducts, getCustomers, createOrder, updateCustomer, getCoupons, addCustomer, getCategories, getSystemSettings } from '../services/dataService';
@@ -52,6 +53,19 @@ const POS: React.FC<POSProps> = ({ onOpenQuickAdd }) => {
     const [showPriceModal, setShowPriceModal] = useState(false);
     const [pendingItem, setPendingItem] = useState<{product: Product, variation?: Variation, type: 'sale' | 'rent'} | null>(null);
     const [manualPriceInput, setManualPriceInput] = useState('');
+
+    // Internal helper for keypad inputs
+    const handleKeypadPress = (val: string, current: string, setter: (v: string) => void) => {
+        if (val === 'BACK') {
+            setter(current.slice(0, -1));
+        } else if (val === '.') {
+            if (!current.includes('.')) setter(current + '.');
+        } else {
+            // Limit to 2 decimals if needed, but for entry just keep it simple
+            if (current === '0') setter(val);
+            else setter(current + val);
+        }
+    };
 
     // VARIATION SELECTION MODAL STATE
     const [showVariationModal, setShowVariationModal] = useState(false);
@@ -1164,33 +1178,77 @@ const POS: React.FC<POSProps> = ({ onOpenQuickAdd }) => {
                 )}
             </Modal>
 
-            {/* MANUAL PRICE MODAL (Zero Price Items) */}
-            <Modal isOpen={showPriceModal} onClose={() => setShowPriceModal(false)} title="INGRESAR PRECIO">
-                <form onSubmit={handleConfirmManualPrice} className="space-y-4">
-                    <div className="text-center mb-4">
-                        <span className="block text-xs font-bold text-slate-400 uppercase mb-1">PRODUCTO</span>
-                        <h3 className="text-lg font-bold text-slate-800 uppercase">{pendingItem?.product.name}</h3>
-                        <span className="text-xs bg-slate-100 px-2 py-1 rounded text-slate-500 font-bold uppercase">{pendingItem?.type === 'rent' ? 'RENTA' : 'VENTA'}</span>
-                    </div>
-                    
-                    <div>
-                        <label className="text-xs font-bold text-slate-500 uppercase ml-1">PRECIO MANUAL ($)</label>
-                        <Input 
-                            type="number"
-                            value={manualPriceInput}
-                            onChange={(e) => setManualPriceInput(e.target.value)}
-                            placeholder="0.00"
-                            className="text-center text-2xl font-bold"
-                            autoFocus
-                            step="0.01"
-                        />
+            {/* MANUAL PRICE MODAL (Zero Price Items) - Compact Version for iPad */}
+            <Modal isOpen={showPriceModal} onClose={() => setShowPriceModal(false)} title="ASIGNAR PRECIO">
+                <div className="flex flex-col gap-4">
+                    {/* Compact Header & Display Area */}
+                    <div className="bg-slate-900 rounded-2xl p-4 shadow-lg border border-slate-700">
+                        <div className="flex justify-between items-start mb-1 overflow-hidden">
+                            <span className="text-[10px] font-black text-indigo-400 uppercase tracking-widest truncate max-w-[150px]">
+                                {pendingItem?.product.name}
+                            </span>
+                            <span className="text-[9px] bg-indigo-500/20 text-indigo-300 px-2 rounded-full font-bold">
+                                {pendingItem?.type === 'rent' ? 'RENTA' : 'VENTA'}
+                            </span>
+                        </div>
+                        
+                        <div className="flex items-baseline justify-end gap-1">
+                            <span className="text-xl font-bold text-slate-500">$</span>
+                            <span className="text-4xl font-black text-white font-mono antialiased">
+                                {manualPriceInput || '0'}
+                                <motion.span 
+                                    animate={{ opacity: [0, 1, 0] }}
+                                    transition={{ duration: 0.8, repeat: Infinity }}
+                                    className="inline-block w-0.5 h-7 bg-indigo-500 ml-0.5"
+                                />
+                            </span>
+                        </div>
                     </div>
 
-                    <div className="flex gap-2 pt-2">
-                        <Button type="button" variant="secondary" onClick={() => setShowPriceModal(false)} className="flex-1 uppercase">CANCELAR</Button>
-                        <Button type="submit" className="flex-[2] uppercase shadow-xl">CONFIRMAR PRECIO</Button>
+                    {/* Highly Responsive Keypad */}
+                    <div className="grid grid-cols-3 gap-2">
+                        {[1, 2, 3, 4, 5, 6, 7, 8, 9, '.', 0, 'BACK'].map((key) => (
+                            <button
+                                key={key.toString()}
+                                onClick={() => handleKeypadPress(key.toString(), manualPriceInput, setManualPriceInput)}
+                                className={`h-14 rounded-xl flex items-center justify-center text-lg font-black transition-all active:scale-95 shadow-sm border ${
+                                    key === 'BACK' 
+                                    ? 'bg-rose-500 text-white border-rose-600' 
+                                    : 'bg-white text-slate-700 border-slate-200'
+                                }`}
+                            >
+                                {key === 'BACK' ? <Delete className="w-5 h-5" /> : key}
+                            </button>
+                        ))}
                     </div>
-                </form>
+
+                    {/* Compact Action Row */}
+                    <div className="flex gap-2">
+                        <Button 
+                            variant="secondary" 
+                            onClick={() => {
+                                setShowPriceModal(false);
+                                setManualPriceInput('');
+                            }} 
+                            className="flex-1 py-3 text-xs uppercase font-bold"
+                        >
+                            SALIR
+                        </Button>
+                        <Button 
+                            disabled={!manualPriceInput || parseFloat(manualPriceInput) <= 0}
+                            onClick={() => {
+                                if (!pendingItem) return;
+                                addToCart(pendingItem.product, pendingItem.variation, pendingItem.type, parseFloat(manualPriceInput));
+                                setShowPriceModal(false);
+                                setPendingItem(null);
+                                setManualPriceInput('');
+                            }}
+                            className="flex-[2] py-3 text-xs uppercase font-black bg-emerald-600 hover:bg-emerald-500 shadow-emerald-900/20"
+                        >
+                            AÑADIR A ORDEN
+                        </Button>
+                    </div>
+                </div>
             </Modal>
 
             {/* PAYMENT MODAL */}
@@ -1215,17 +1273,59 @@ const POS: React.FC<POSProps> = ({ onOpenQuickAdd }) => {
 
                     <div className="space-y-4">
                         <div>
-                            <label className="text-xs font-bold text-slate-500 uppercase ml-1 block mb-1">
+                            <label className="text-xs font-bold text-slate-500 uppercase ml-1 block mb-2 text-center">
                                 {isApartadoMode ? 'ANTICIPO RECIBIDO ($)' : 'DINERO RECIBIDO ($)'}
                             </label>
-                            <Input 
-                                type="number" 
-                                value={amountPaid}
-                                onChange={(e) => setAmountPaid(e.target.value)}
-                                placeholder="0.00"
-                                className="text-center text-xl font-bold"
-                                autoFocus
-                            />
+                            
+                            <div className="bg-slate-50 p-4 rounded-2xl border-2 border-dashed border-slate-200 mb-6 group transition-all focus-within:border-indigo-400 focus-within:bg-indigo-50/30">
+                                <div className="text-center flex items-center justify-center gap-2">
+                                    <span className="text-indigo-600 text-xl font-black">$</span>
+                                    <span className="text-4xl font-black text-slate-800 font-mono tracking-tighter">
+                                        {amountPaid || '0.00'}
+                                    </span>
+                                    <motion.span 
+                                        animate={{ opacity: [0, 1, 0] }}
+                                        transition={{ duration: 0.8, repeat: Infinity }}
+                                        className="inline-block w-1 h-8 bg-indigo-500 ml-1 align-middle"
+                                    />
+                                </div>
+                            </div>
+
+                            {/* Payment Keypad */}
+                            <div className="grid grid-cols-3 gap-2 mb-6">
+                                {[1, 2, 3, 4, 5, 6, 7, 8, 9, '.', 0, 'BACK'].map((key) => (
+                                    <button
+                                        key={key.toString()}
+                                        onClick={() => handleKeypadPress(key.toString(), amountPaid, setAmountPaid)}
+                                        className={`h-14 rounded-xl flex items-center justify-center text-lg font-bold transition-all active:scale-95 ${
+                                            key === 'BACK' 
+                                            ? 'bg-rose-50 text-rose-500 border border-rose-100' 
+                                            : 'bg-white text-slate-700 border border-slate-100 shadow-sm'
+                                        }`}
+                                    >
+                                        {key === 'BACK' ? <Delete className="w-5 h-5" /> : key}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* Quick Payment Options */}
+                        <div className="flex gap-2 mb-2">
+                            {[20, 50, 100, 200, 500].map(val => (
+                                <button 
+                                    key={val}
+                                    onClick={() => setAmountPaid(val.toString())}
+                                    className="flex-1 py-2 bg-slate-100 hover:bg-indigo-100 text-[10px] font-bold text-slate-600 hover:text-indigo-700 rounded-lg border border-slate-200 transition-colors uppercase"
+                                >
+                                    ${val}
+                                </button>
+                            ))}
+                            <button 
+                                onClick={() => setAmountPaid(total.toString())}
+                                className="flex-1 py-2 bg-indigo-50 hover:bg-indigo-100 text-[10px] font-black text-indigo-600 rounded-lg border border-indigo-200 transition-colors uppercase"
+                            >
+                                TOTAL
+                            </button>
                         </div>
 
                         {/* Change Calculator */}
