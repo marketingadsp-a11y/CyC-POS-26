@@ -69,6 +69,7 @@ export interface SystemSettings {
   nextTicketSequence?: number; // e.g. 1 (will result in 260001)
   logoUrl?: string; // New: Logo URL for POS empty state
   pwaIconUrl?: string; // New: Logo URL for PWA Manifest and Favicon
+  imgbbKey?: string; // New: API Key for ImgBB integrations
 }
 
 export interface Expense {

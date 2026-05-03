@@ -3,7 +3,7 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Plus, RefreshCw, Box, Tag, DollarSign, Layers, Search, Trash2, ArrowLeft, Upload, FileUp, LayoutGrid, List, Pencil, ImagePlus, X, Lock, Tags, AlertCircle } from 'lucide-react';
 import { Button, Input, Select, Card, Badge, Modal } from '../components/UI';
 import { Product, Variation, User, Category } from '../types';
-import { generateProductCode, addProduct, getProducts, deleteProduct, importProductsBatch, updateProduct, uploadProductImage, getCategories, addCategory, deleteCategory, renameCategoryGlobal, batchUpdateCategoryInProducts } from '../services/dataService';
+import { generateProductCode, addProduct, getProducts, deleteProduct, importProductsBatch, updateProduct, uploadProductImage, getCategories, addCategory, deleteCategory, renameCategoryGlobal, batchUpdateCategoryInProducts, getSystemSettings } from '../services/dataService';
 
 const Inventory: React.FC<{ user: User }> = ({ user }) => {
   const [view, setView] = useState<'list' | 'form'>('list');
@@ -161,7 +161,8 @@ const Inventory: React.FC<{ user: User }> = ({ user }) => {
           let imageUrl = (editingCategory as Category)?.imageUrl || '';
 
           if (catImageFile) {
-              imageUrl = await uploadProductImage(catImageFile); // Reusing product image upload logic
+              const settings = await getSystemSettings();
+              imageUrl = await uploadProductImage(catImageFile, settings.imgbbKey); // Reusing product image upload logic
           } else if (catImagePreview === null && (editingCategory as Category)?.imageUrl) {
               // User cleared the image
               imageUrl = '';
@@ -277,7 +278,8 @@ const Inventory: React.FC<{ user: User }> = ({ user }) => {
 
       // Upload image if a new file exists
       if (imageFile) {
-        finalImageUrl = await uploadProductImage(imageFile);
+        const settings = await getSystemSettings();
+        finalImageUrl = await uploadProductImage(imageFile, settings.imgbbKey);
       }
 
       const productData = { ...formData, imageUrl: finalImageUrl };

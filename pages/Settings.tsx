@@ -35,6 +35,7 @@ const Settings: React.FC<{ user: User }> = ({ user }) => {
   const [receiptTemplate, setReceiptTemplate] = useState<'v1'|'v2'>('v1');
   const [logoUrl, setLogoUrl] = useState<string>('');
   const [pwaIconUrl, setPwaIconUrl] = useState<string>('');
+  const [imgbbKey, setImgbbKey] = useState<string>('');
   const [isUploadingLogo, setIsUploadingLogo] = useState(false);
   
   // Ticket Sequence Settings
@@ -85,6 +86,7 @@ const Settings: React.FC<{ user: User }> = ({ user }) => {
     setNextSequence(s.nextTicketSequence?.toString() || '1');
     setLogoUrl(s.logoUrl || '');
     setPwaIconUrl(s.pwaIconUrl || '');
+    setImgbbKey(s.imgbbKey || '');
     setAllProducts(p);
     setCoupons(c);
     setLoading(false);
@@ -105,7 +107,7 @@ const Settings: React.FC<{ user: User }> = ({ user }) => {
 
       setIsUploadingLogo(true);
       try {
-          const url = await uploadAppLogo(file);
+          const url = await uploadAppLogo(file, imgbbKey);
           setLogoUrl(url);
           // Also set as PWA icon if empty
           if (!pwaIconUrl) setPwaIconUrl(url);
@@ -140,7 +142,8 @@ const Settings: React.FC<{ user: User }> = ({ user }) => {
               ticketPrefix: ticketPrefix,
               nextTicketSequence: nextSeq,
               logoUrl: logoUrl,
-              pwaIconUrl: pwaIconUrl
+              pwaIconUrl: pwaIconUrl,
+              imgbbKey: imgbbKey
           });
           alert("Ajustes guardados. Si cambió el icono PWA, recargue la página.");
           loadData(); // Reload to ensure sync
@@ -483,6 +486,20 @@ const Settings: React.FC<{ user: User }> = ({ user }) => {
                                 placeholder="HTTPS://... (PNG CUADRADO RECOMENDADO)"
                             />
                             <p className="text-xs text-slate-400 mt-1 uppercase">* Icono que se usará al instalar la app en el celular/escritorio.</p>
+                        </div>
+
+                        <div className="bg-indigo-50/50 p-4 rounded-2xl border border-indigo-100">
+                            <label className="text-xs font-black text-indigo-600 uppercase mb-2 block">CONFIGURACIÓN IMGBB (HOSTING DE IMÁGENES)</label>
+                            <Input 
+                                value={imgbbKey}
+                                onChange={(e) => setImgbbKey(e.target.value)}
+                                placeholder="INGRESE SU API KEY DE IMGBB"
+                                type="password"
+                            />
+                            <p className="text-[10px] text-indigo-500 mt-2 font-bold uppercase">
+                                * SI ESTÁ PRESENTE, LAS IMÁGENES SE SUBIRÁN A IMGBB EN LUGAR DE FIREBASE STORAGE.
+                                <a href="https://api.imgbb.com/" target="_blank" rel="noreferrer" className="ml-1 underline">OBTENER API KEY AQUÍ</a>
+                            </p>
                         </div>
                     </div>
 

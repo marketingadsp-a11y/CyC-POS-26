@@ -1251,103 +1251,124 @@ const POS: React.FC<POSProps> = ({ onOpenQuickAdd }) => {
                 </div>
             </Modal>
 
-            {/* PAYMENT MODAL */}
-            <Modal isOpen={showPaymentModal} onClose={() => handleClosePayment()} title={isApartadoMode ? "CONFIRMAR APARTADO" : "COBRAR"}>
-                 <div className="space-y-6">
-                    <div className="text-center">
-                        <div className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">TOTAL A PAGAR</div>
-                        <div className="text-5xl font-black text-slate-900 font-mono">${total.toFixed(2)}</div>
-                    </div>
-
-                    <div className="flex bg-slate-100 p-1 rounded-2xl">
-                        <button onClick={() => handlePaymentMethodChange('cash')} className={`flex-1 py-4 rounded-xl font-bold uppercase text-sm transition-all flex flex-col items-center gap-1 ${paymentMethod === 'cash' ? 'bg-white shadow-md text-indigo-600' : 'text-slate-500'}`}>
-                            <Banknote className="w-5 h-5"/> EFECTIVO
-                        </button>
-                        <button onClick={() => handlePaymentMethodChange('card')} className={`flex-1 py-4 rounded-xl font-bold uppercase text-sm transition-all flex flex-col items-center gap-1 ${paymentMethod === 'card' ? 'bg-white shadow-md text-indigo-600' : 'text-slate-500'}`}>
-                            <CreditCard className="w-5 h-5"/> TARJETA
-                        </button>
-                        <button onClick={() => handlePaymentMethodChange('transfer')} className={`flex-1 py-4 rounded-xl font-bold uppercase text-sm transition-all flex flex-col items-center gap-1 ${paymentMethod === 'transfer' ? 'bg-white shadow-md text-indigo-600' : 'text-slate-500'}`}>
-                            <ArrowUpRight className="w-5 h-5"/> TRANSFER
-                        </button>
-                    </div>
-
-                    <div className="space-y-4">
-                        <div>
-                            <label className="text-xs font-bold text-slate-500 uppercase ml-1 block mb-2 text-center">
-                                {isApartadoMode ? 'ANTICIPO RECIBIDO ($)' : 'DINERO RECIBIDO ($)'}
-                            </label>
-                            
-                            <div className="bg-slate-50 p-4 rounded-2xl border-2 border-dashed border-slate-200 mb-6 group transition-all focus-within:border-indigo-400 focus-within:bg-indigo-50/30">
-                                <div className="text-center flex items-center justify-center gap-2">
-                                    <span className="text-indigo-600 text-xl font-black">$</span>
-                                    <span className="text-4xl font-black text-slate-800 font-mono tracking-tighter">
-                                        {amountPaid || '0.00'}
-                                    </span>
-                                    <motion.span 
-                                        animate={{ opacity: [0, 1, 0] }}
-                                        transition={{ duration: 0.8, repeat: Infinity }}
-                                        className="inline-block w-1 h-8 bg-indigo-500 ml-1 align-middle"
-                                    />
-                                </div>
-                            </div>
-
-                            {/* Payment Keypad */}
-                            <div className="grid grid-cols-3 gap-2 mb-6">
-                                {[1, 2, 3, 4, 5, 6, 7, 8, 9, '.', 0, 'BACK'].map((key) => (
-                                    <button
-                                        key={key.toString()}
-                                        onClick={() => handleKeypadPress(key.toString(), amountPaid, setAmountPaid)}
-                                        className={`h-14 rounded-xl flex items-center justify-center text-lg font-bold transition-all active:scale-95 ${
-                                            key === 'BACK' 
-                                            ? 'bg-rose-50 text-rose-500 border border-rose-100' 
-                                            : 'bg-white text-slate-700 border border-slate-100 shadow-sm'
-                                        }`}
-                                    >
-                                        {key === 'BACK' ? <Delete className="w-5 h-5" /> : key}
-                                    </button>
-                                ))}
+            {/* PAYMENT MODAL - Two Column Layout for iPad */}
+            <Modal isOpen={showPaymentModal} onClose={() => handleClosePayment()} title={isApartadoMode ? "CONFIRMAR APARTADO" : "FINALIZAR VENTA"} maxWidth="max-w-4xl">
+                 <div className="flex flex-col md:flex-row gap-6">
+                    {/* LEFT SIDE: Payment Methods & Info */}
+                    <div className="flex-1 space-y-6">
+                        <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                            <span className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 text-center">SELECCIONE MÉTODO DE PAGO</span>
+                            <div className="grid grid-cols-2 gap-3">
+                                <button 
+                                    onClick={() => handlePaymentMethodChange('cash')}
+                                    className={`py-6 rounded-2xl flex flex-col items-center justify-center gap-2 border-2 transition-all active:scale-95 ${paymentMethod === 'cash' ? 'bg-indigo-600 border-indigo-600 text-white shadow-lg' : 'bg-white border-slate-100 text-slate-600'}`}
+                                >
+                                    <Banknote className="w-8 h-8" />
+                                    <span className="text-[10px] font-black uppercase tracking-widest">EFECTIVO</span>
+                                </button>
+                                <button 
+                                    onClick={() => handlePaymentMethodChange('card')}
+                                    className={`py-6 rounded-2xl flex flex-col items-center justify-center gap-2 border-2 transition-all active:scale-95 ${paymentMethod === 'card' ? 'bg-indigo-600 border-indigo-600 text-white shadow-lg' : 'bg-white border-slate-100 text-slate-600'}`}
+                                >
+                                    <CreditCard className="w-8 h-8" />
+                                    <span className="text-[10px] font-black uppercase tracking-widest">TARJETA</span>
+                                </button>
+                                <button 
+                                    onClick={() => handlePaymentMethodChange('transfer')}
+                                    className={`py-6 rounded-2xl flex flex-col items-center justify-center gap-2 border-2 transition-all active:scale-95 ${paymentMethod === 'transfer' ? 'bg-indigo-600 border-indigo-600 text-white shadow-lg' : 'bg-white border-slate-100 text-slate-600'}`}
+                                >
+                                    <ArrowUpRight className="w-8 h-8" />
+                                    <span className="text-[10px] font-black uppercase tracking-widest">TRANSF.</span>
+                                </button>
+                                <button 
+                                    onClick={() => handlePaymentMethodChange('other')}
+                                    className={`py-6 rounded-2xl flex flex-col items-center justify-center gap-2 border-2 transition-all active:scale-95 ${paymentMethod === 'other' ? 'bg-indigo-600 border-indigo-600 text-white shadow-lg' : 'bg-white border-slate-100 text-slate-600'}`}
+                                >
+                                    <Layers className="w-8 h-8" />
+                                    <span className="text-[10px] font-black uppercase tracking-widest">OTRO</span>
+                                </button>
                             </div>
                         </div>
 
-                        {/* Quick Payment Options */}
-                        <div className="flex gap-2 mb-2">
-                            {[20, 50, 100, 200, 500].map(val => (
-                                <button 
-                                    key={val}
-                                    onClick={() => setAmountPaid(val.toString())}
-                                    className="flex-1 py-2 bg-slate-100 hover:bg-indigo-100 text-[10px] font-bold text-slate-600 hover:text-indigo-700 rounded-lg border border-slate-200 transition-colors uppercase"
+                        <div className="bg-slate-50 p-6 rounded-2xl border border-slate-100 flex flex-col items-center justify-center text-center">
+                            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">TOTAL A COBRAR</span>
+                            <span className="text-4xl font-black text-indigo-600 font-mono tracking-tighter">${total.toFixed(2)}</span>
+                        </div>
+
+                        <div className="flex items-center gap-2 p-4 bg-amber-50 border border-amber-100 rounded-xl">
+                            <input 
+                                type="checkbox" 
+                                id="pwa-apartado" 
+                                checked={isApartadoMode} 
+                                onChange={(e) => setIsApartadoMode(e.target.checked)}
+                                className="w-5 h-5 text-amber-600 rounded bg-white"
+                            />
+                            <label htmlFor="pwa-apartado" className="text-[11px] font-black text-amber-800 uppercase cursor-pointer select-none">REGISTRAR COMO APARTADO</label>
+                        </div>
+                    </div>
+
+                    {/* RIGHT SIDE: Keypad & Received Money */}
+                    <div className="flex-1 bg-slate-900 p-6 rounded-[2.5rem] shadow-2xl relative overflow-hidden flex flex-col border border-slate-800">
+                        <div className="absolute top-2 right-6 text-white/5 font-black text-7xl italic select-none">POS</div>
+                        
+                        <div className="mb-6 relative z-10">
+                            <label className="text-[10px] font-black text-indigo-400 uppercase tracking-widest block mb-2 text-center">
+                                {isApartadoMode ? 'ANTICIPO RECIBIDO' : 'TECLEE DINERO RECIBIDO'}
+                            </label>
+                            <div className="text-center flex items-center justify-center gap-2">
+                                <span className="text-indigo-400 text-2xl font-black">$</span>
+                                <span className="text-5xl font-black text-white font-mono tracking-tighter">
+                                    {amountPaid || '0'}
+                                </span>
+                                <motion.span 
+                                    animate={{ opacity: [0, 1, 0] }}
+                                    transition={{ duration: 0.8, repeat: Infinity }}
+                                    className="inline-block w-1 h-10 bg-indigo-500 ml-1 align-middle"
+                                />
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-3 gap-2 mb-6 relative z-10">
+                            {[1, 2, 3, 4, 5, 6, 7, 8, 9, '.', 0, 'BACK'].map((key) => (
+                                <button
+                                    key={key.toString()}
+                                    onClick={() => handleKeypadPress(key.toString(), amountPaid, setAmountPaid)}
+                                    className={`h-14 rounded-2xl flex items-center justify-center text-xl font-bold transition-all active:scale-95 ${
+                                        key === 'BACK' 
+                                        ? 'bg-rose-500/20 text-rose-400 border border-rose-500/30 hover:bg-rose-500/30' 
+                                        : 'bg-white/5 text-white border border-white/5 hover:bg-white/10'
+                                    }`}
                                 >
-                                    ${val}
+                                    {key === 'BACK' ? <Delete className="w-6 h-6" /> : key}
                                 </button>
                             ))}
-                            <button 
-                                onClick={() => setAmountPaid(total.toString())}
-                                className="flex-1 py-2 bg-indigo-50 hover:bg-indigo-100 text-[10px] font-black text-indigo-600 rounded-lg border border-indigo-200 transition-colors uppercase"
-                            >
-                                TOTAL
-                            </button>
                         </div>
 
-                        {/* Change Calculator */}
-                        {!isApartadoMode && paymentMethod === 'cash' && amountPaid && parseFloat(amountPaid) >= total && (
-                            <div className="bg-emerald-50 text-emerald-800 p-4 rounded-xl text-center animate-in slide-in-from-top-2">
-                                <span className="text-xs font-bold uppercase block opacity-60">CAMBIO A ENTREGAR</span>
-                                <span className="text-3xl font-black font-mono">${(parseFloat(amountPaid) - total).toFixed(2)}</span>
-                            </div>
-                        )}
-                         
-                        {isApartadoMode && amountPaid && parseFloat(amountPaid) < total && (
-                             <div className="bg-amber-50 text-amber-800 p-4 rounded-xl text-center">
-                                 <span className="text-xs font-bold uppercase block opacity-60">RESTARÁ POR PAGAR</span>
-                                 <span className="text-3xl font-black font-mono">${(total - parseFloat(amountPaid)).toFixed(2)}</span>
-                            </div>
-                        )}
-                    </div>
+                        <div className="mt-auto space-y-4 relative z-10">
+                            {!isApartadoMode && paymentMethod === 'cash' && amountPaid && parseFloat(amountPaid) >= total && (
+                                <div className="p-4 bg-emerald-500/10 border border-emerald-500/20 rounded-2xl flex justify-between items-center">
+                                    <span className="text-xs font-black text-emerald-400 uppercase tracking-widest">CAMBIO PARA CLIENTE:</span>
+                                    <span className="text-2xl font-black text-emerald-400 font-mono tracking-tighter">${(parseFloat(amountPaid) - total).toFixed(2)}</span>
+                                </div>
+                            )}
 
-                    <Button onClick={handleCheckout} className="w-full py-4 text-lg shadow-xl uppercase">
-                        CONFIRMAR {isApartadoMode ? 'APARTADO' : (paymentMethod === 'card' ? 'COBRO MANUAL' : 'COBRO')}
-                    </Button>
-                 </div>
+                            <div className="flex gap-2">
+                                <Button variant="secondary" onClick={() => handleClosePayment()} className="flex-1 py-4 bg-white/5 border-white/10 text-white uppercase text-xs font-black">CANCELAR</Button>
+                                <Button 
+                                    className={`flex-[2] py-4 uppercase font-black text-xs shadow-xl ${
+                                        (!amountPaid || parseFloat(amountPaid) <= 0 || (!isApartadoMode && parseFloat(amountPaid) < total))
+                                        ? 'bg-slate-800 text-slate-500 cursor-not-allowed opacity-50'
+                                        : 'bg-emerald-600 hover:bg-emerald-500 text-white'
+                                    }`}
+                                    onClick={handleCheckout}
+                                    disabled={!amountPaid || parseFloat(amountPaid) <= 0 || (!isApartadoMode && parseFloat(amountPaid) < total)}
+                                >
+                                    {isApartadoMode ? 'EMITIR APARTADO' : (paymentMethod === 'card' ? 'COBRO MANUAL' : 'COBRAR VENTA')}
+                                </Button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </Modal>
 
             {/* --- SUCCESS MODAL --- */}

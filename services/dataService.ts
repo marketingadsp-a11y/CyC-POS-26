@@ -71,29 +71,46 @@ const compressImage = (file: File, maxWidth = 1024, maxHeight = 1024): Promise<B
   });
 };
 
-export const uploadProductImage = async (file: File): Promise<string> => {
+export const uploadToImgBB = async (file: File, apiKey: string): Promise<string> => {
+    const formData = new FormData();
+    formData.append('image', file);
+    
+    const response = await fetch(`https://api.imgbb.com/1/upload?key=${apiKey}`, {
+        method: 'POST',
+        body: formData
+    });
+    
+    if (!response.ok) {
+        throw new Error('ImgBB upload failed');
+    }
+    
+    const result = await response.json();
+    return result.data.url;
+};
+
+export const uploadProductImage = async (file: File, imgbbKey?: string): Promise<string> => {
   try {
-    // 1. Compress the image before uploading
+    if (imgbbKey) {
+        return await uploadToImgBB(file, imgbbKey);
+    }
+
+    // Fallback to Firebase Storage
     const compressedBlob = await compressImage(file);
-    
-    // 2. Create a unique path. We force .jpg extension since we converted it.
     const storageRef = ref(storage, `products/${Date.now()}_opt.jpg`);
-    
-    // 3. Upload the compressed blob
     const snapshot = await uploadBytes(storageRef, compressedBlob);
-    
-    // 4. Get URL
-    const downloadURL = await getDownloadURL(snapshot.ref);
-    return downloadURL;
+    return await getDownloadURL(snapshot.ref);
   } catch (e) {
     console.error("Error uploading image: ", e);
     throw e;
   }
 };
 
-export const uploadAppLogo = async (file: File): Promise<string> => {
+export const uploadAppLogo = async (file: File, imgbbKey?: string): Promise<string> => {
   try {
-    // Logo usually needs to be smaller and maybe higher quality or just different path
+    if (imgbbKey) {
+        return await uploadToImgBB(file, imgbbKey);
+    }
+
     const compressedBlob = await compressImage(file, 512, 512);
     const storageRef = ref(storage, `branding/logo_${Date.now()}.jpg`);
     const snapshot = await uploadBytes(storageRef, compressedBlob);
@@ -606,7 +623,8 @@ export const getSystemSettings = async (): Promise<SystemSettings> => {
           ticketPrefix: data.ticketPrefix || '26',
           nextTicketSequence: data.nextTicketSequence || 1,
           logoUrl: data.logoUrl || '',
-          pwaIconUrl: data.pwaIconUrl || ''
+          pwaIconUrl: data.pwaIconUrl || '',
+          imgbbKey: data.imgbbKey || ''
       } as SystemSettings;
     } else {
       // Return default
@@ -620,7 +638,8 @@ export const getSystemSettings = async (): Promise<SystemSettings> => {
           ticketPrefix: '26',
           nextTicketSequence: 1,
           logoUrl: '',
-          pwaIconUrl: ''
+          pwaIconUrl: '',
+          imgbbKey: ''
       };
     }
   } catch (e) {
@@ -635,7 +654,8 @@ export const getSystemSettings = async (): Promise<SystemSettings> => {
         ticketPrefix: '26',
         nextTicketSequence: 1,
         logoUrl: '',
-        pwaIconUrl: ''
+        pwaIconUrl: '',
+        imgbbKey: ''
     };
   }
 }
@@ -688,7 +708,8 @@ export const performFactoryReset = async () => {
             ticketPrefix: '26',
             nextTicketSequence: 1,
             logoUrl: '',
-            pwaIconUrl: ''
+            pwaIconUrl: '',
+            imgbbKey: ''
         };
         await setDoc(doc(db, "settings", "global"), defaultSettings);
 
