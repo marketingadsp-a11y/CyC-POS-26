@@ -29,7 +29,7 @@ const stripUndefined = (obj: any): any => {
 
 // --- Storage / Images (Compressed) ---
 
-const compressImage = (file: File): Promise<Blob> => {
+const compressImage = (file: File, maxWidth = 1024, maxHeight = 1024): Promise<Blob> => {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.readAsDataURL(file);
@@ -38,22 +38,19 @@ const compressImage = (file: File): Promise<Blob> => {
       img.src = event.target?.result as string;
       img.onload = () => {
         const canvas = document.createElement('canvas');
-        // Max dimensions for optimization
-        const MAX_WIDTH = 1024;
-        const MAX_HEIGHT = 1024;
         let width = img.width;
         let height = img.height;
 
         // Calculate new dimensions keeping aspect ratio
         if (width > height) {
-          if (width > MAX_WIDTH) {
-            height *= MAX_WIDTH / width;
-            width = MAX_WIDTH;
+          if (width > maxWidth) {
+            height *= maxWidth / width;
+            width = maxWidth;
           }
         } else {
-          if (height > MAX_HEIGHT) {
-            width *= MAX_HEIGHT / height;
-            height = MAX_HEIGHT;
+          if (height > maxHeight) {
+            width *= maxHeight / height;
+            height = maxHeight;
           }
         }
 
@@ -90,6 +87,19 @@ export const uploadProductImage = async (file: File): Promise<string> => {
     return downloadURL;
   } catch (e) {
     console.error("Error uploading image: ", e);
+    throw e;
+  }
+};
+
+export const uploadAppLogo = async (file: File): Promise<string> => {
+  try {
+    // Logo usually needs to be smaller and maybe higher quality or just different path
+    const compressedBlob = await compressImage(file, 512, 512);
+    const storageRef = ref(storage, `branding/logo_${Date.now()}.jpg`);
+    const snapshot = await uploadBytes(storageRef, compressedBlob);
+    return await getDownloadURL(snapshot.ref);
+  } catch (e) {
+    console.error("Error uploading logo: ", e);
     throw e;
   }
 };

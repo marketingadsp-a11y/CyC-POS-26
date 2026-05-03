@@ -3,7 +3,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { Settings as SettingsIcon, Shield, Trash2, UserPlus, Key, DollarSign, Save, AlertTriangle, Check, Pencil, X, Hash, TicketPercent, Plus, Percent, ToggleRight, ToggleLeft, LogOut, ArrowUp, ArrowDown, GripVertical, Menu, Smartphone, RefreshCw } from 'lucide-react';
 import { Button, Input, Card, Select, Modal } from '../components/UI';
 import { User, Product, UserPermissions, Coupon } from '../types';
-import { getUsers, addUser, updateUser, deleteUser, getSystemSettings, updateSystemSettings, getProducts, bulkDeleteProducts, getCoupons, addCoupon, deleteCoupon, updateCoupon, resetUserSession, resetAllUserSessions, performFactoryReset } from '../services/dataService';
+import { getUsers, addUser, updateUser, deleteUser, getSystemSettings, updateSystemSettings, getProducts, bulkDeleteProducts, getCoupons, addCoupon, deleteCoupon, updateCoupon, resetUserSession, resetAllUserSessions, performFactoryReset, uploadAppLogo } from '../services/dataService';
 import { MENU_ITEMS } from '../App'; // Import MENU_ITEMS to know available routes
 
 const defaultPermissions: UserPermissions = {
@@ -35,6 +35,7 @@ const Settings: React.FC<{ user: User }> = ({ user }) => {
   const [receiptTemplate, setReceiptTemplate] = useState<'v1'|'v2'>('v1');
   const [logoUrl, setLogoUrl] = useState<string>('');
   const [pwaIconUrl, setPwaIconUrl] = useState<string>('');
+  const [isUploadingLogo, setIsUploadingLogo] = useState(false);
   
   // Ticket Sequence Settings
   const [ticketPrefix, setTicketPrefix] = useState<string>('26');
@@ -97,6 +98,24 @@ const Settings: React.FC<{ user: User }> = ({ user }) => {
      const cats = new Set(allProducts.map(p => p.category).filter(Boolean));
      return ['TODOS', ...Array.from(cats).sort()];
   }, [allProducts]);
+
+  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+
+      setIsUploadingLogo(true);
+      try {
+          const url = await uploadAppLogo(file);
+          setLogoUrl(url);
+          // Also set as PWA icon if empty
+          if (!pwaIconUrl) setPwaIconUrl(url);
+          alert("Logotipo subido. Guarde los cambios para aplicar.");
+      } catch (error) {
+          alert("Error al subir el logotipo.");
+      } finally {
+          setIsUploadingLogo(false);
+      }
+  };
 
   const handleSaveSettings = async () => {
       const fee = parseFloat(lateFee);
@@ -406,16 +425,53 @@ const Settings: React.FC<{ user: User }> = ({ user }) => {
                     </div>
                     
                     {/* LOGOS */}
-                    <div className="md:col-span-2 space-y-4">
-                        <div>
-                            <Input 
-                                label="URL DEL LOGOTIPO (PANTALLA DE VENTA)"
-                                value={logoUrl}
-                                onChange={(e) => setLogoUrl(e.target.value)}
-                                placeholder="HTTPS://..."
-                            />
-                            <p className="text-xs text-slate-400 mt-1 uppercase">* Se muestra en la caja cuando el carrito está vacío.</p>
+                    <div className="md:col-span-2 space-y-6">
+                        <div className="p-4 bg-slate-50 border border-slate-200 rounded-2xl">
+                            <label className="text-xs font-bold text-slate-500 uppercase mb-3 block">LOGOTIPO DEL NEGOCIO</label>
+                            
+                            <div className="flex flex-col md:flex-row items-center gap-6">
+                                <div className="w-24 h-24 bg-white border-2 border-dashed border-slate-200 rounded-2xl flex items-center justify-center overflow-hidden shrink-0 relative group">
+                                    {logoUrl ? (
+                                        <>
+                                            <img src={logoUrl} alt="Logo" className="w-full h-full object-contain p-2" />
+                                            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+                                                <Button size="sm" variant="danger" onClick={() => setLogoUrl('')} className="h-8 w-8 p-0 rounded-full">
+                                                    <X className="w-4 h-4" />
+                                                </Button>
+                                            </div>
+                                        </>
+                                    ) : (
+                                        <div className="text-slate-300 flex flex-col items-center">
+                                            <Plus className="w-8 h-8" />
+                                            <span className="text-[10px] uppercase font-bold">SUBIR</span>
+                                        </div>
+                                    )}
+                                    <input 
+                                        type="file" 
+                                        accept="image/*" 
+                                        onChange={handleLogoUpload}
+                                        className="absolute inset-0 opacity-0 cursor-pointer"
+                                        disabled={isUploadingLogo}
+                                    />
+                                    {isUploadingLogo && (
+                                        <div className="absolute inset-0 bg-white/80 flex items-center justify-center">
+                                            <RefreshCw className="w-6 h-6 text-indigo-600 animate-spin" />
+                                        </div>
+                                    )}
+                                </div>
+                                
+                                <div className="flex-1 space-y-3 w-full">
+                                    <Input 
+                                        label="URL DEL LOGOTIPO (PANTALLA DE VENTA)"
+                                        value={logoUrl}
+                                        onChange={(e) => setLogoUrl(e.target.value)}
+                                        placeholder="HTTPS://..."
+                                    />
+                                    <p className="text-[10px] text-slate-400 uppercase">* Se recomienda un logo con fondo transparente (PNG).</p>
+                                </div>
+                            </div>
                         </div>
+
                         <div>
                             <div className="flex items-center gap-2 mb-1">
                                 <Smartphone className="w-4 h-4 text-slate-500" />

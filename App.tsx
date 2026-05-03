@@ -58,9 +58,10 @@ const NavItem: React.FC<{ to: string, icon: any, label: string }> = ({ to, icon:
 const MainLayout: React.FC<{ 
   user: User, 
   setUser: (u: User | null) => void, 
+  settings: SystemSettings | null,
   onOpenQuickReturn: () => void,
   onOpenQuickRegister: () => void
-}> = ({ user, setUser, onOpenQuickReturn, onOpenQuickRegister }) => {
+}> = ({ user, setUser, settings, onOpenQuickReturn, onOpenQuickRegister }) => {
   const location = useLocation();
   const isPos = location.pathname === '/';
   
@@ -119,8 +120,12 @@ const MainLayout: React.FC<{
     <div className="min-h-screen bg-[#f3f4f6] text-slate-900 font-sans pb-36 lg:pb-0 lg:pl-24 relative">
         {/* Desktop Sidebar / Mobile Bottom Bar (2 Rows on Mobile) */}
         <nav className="fixed bottom-0 left-0 w-full lg:w-24 lg:h-full bg-white border-t lg:border-t-0 lg:border-r border-slate-200 z-40 flex flex-col lg:flex-col items-center justify-center lg:justify-center gap-1 lg:gap-6 p-2 lg:p-6 shadow-2xl lg:shadow-none overflow-y-auto hide-scrollbar">
-          <div className="hidden lg:flex items-center justify-center w-12 h-12 bg-indigo-600 rounded-xl mb-auto shadow-lg shadow-indigo-300 flex-shrink-0">
-             <span className="text-white font-bold text-xl">CyC</span>
+          <div className="hidden lg:flex items-center justify-center w-12 h-12 bg-indigo-600 rounded-xl mb-auto shadow-lg shadow-indigo-300 flex-shrink-0 overflow-hidden">
+             {settings?.logoUrl ? (
+                <img src={settings.logoUrl} alt="Logo" className="w-full h-full object-cover" />
+             ) : (
+                <span className="text-white font-bold text-xl">CyC</span>
+             )}
           </div>
           
           {/* Mobile: Grid 5 cols (forces 2 rows). Desktop: Flex Col */}
@@ -435,15 +440,25 @@ const App: React.FC = () => {
     } catch (error) { return null; }
   });
 
+  const [settings, setSettings] = useState<SystemSettings | null>(null);
   const [isQuickReturnOpen, setIsQuickReturnOpen] = useState(false);
   const [isQuickRegisterOpen, setIsQuickRegisterOpen] = useState(false);
   const [quickRegName, setQuickRegName] = useState('');
   
+  // --- LOAD SYSTEM SETTINGS ---
+  useEffect(() => {
+    const loadSettings = async () => {
+      const s = await getSystemSettings();
+      setSettings(s);
+    };
+    loadSettings();
+  }, []);
+
   // --- DYNAMIC PWA MANIFEST LOADER ---
   useEffect(() => {
       const applyPWASettings = async () => {
+          if (!settings) return;
           try {
-              const settings = await getSystemSettings();
               const iconUrl = settings.pwaIconUrl;
 
               if (iconUrl) {
@@ -511,11 +526,17 @@ const App: React.FC = () => {
     else localStorage.removeItem('cyc_pos_user');
   }, [user]);
 
-  if (!user) return <Login onLogin={setUser} />;
+  if (!user) return <Login onLogin={setUser} logoUrl={settings?.logoUrl} businessName={settings?.businessName} />;
 
   return (
     <HashRouter>
-      <MainLayout user={user} setUser={setUser} onOpenQuickReturn={() => setIsQuickReturnOpen(true)} onOpenQuickRegister={() => { setQuickRegName(''); setIsQuickRegisterOpen(true); }} />
+      <MainLayout 
+        user={user} 
+        setUser={setUser} 
+        settings={settings}
+        onOpenQuickReturn={() => setIsQuickReturnOpen(true)} 
+        onOpenQuickRegister={() => { setQuickRegName(''); setIsQuickRegisterOpen(true); }} 
+      />
       <QuickReturnModal isOpen={isQuickReturnOpen} onClose={() => setIsQuickReturnOpen(false)} />
       <QuickRegisterModal isOpen={isQuickRegisterOpen} onClose={() => setIsQuickRegisterOpen(false)} onSuccess={() => {}} initialName={quickRegName} />
     </HashRouter>

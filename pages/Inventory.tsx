@@ -1,10 +1,9 @@
 
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { Plus, RefreshCw, Box, Tag, DollarSign, Layers, Search, Trash2, ArrowLeft, Upload, FileUp, LayoutGrid, List, Pencil, ImagePlus, X, Lock, Tags, AlertCircle, Image as ImageIcon } from 'lucide-react';
+import { Plus, RefreshCw, Box, Tag, DollarSign, Layers, Search, Trash2, ArrowLeft, Upload, FileUp, LayoutGrid, List, Pencil, ImagePlus, X, Lock, Tags, AlertCircle } from 'lucide-react';
 import { Button, Input, Select, Card, Badge, Modal } from '../components/UI';
 import { Product, Variation, User, Category } from '../types';
 import { generateProductCode, addProduct, getProducts, deleteProduct, importProductsBatch, updateProduct, uploadProductImage, getCategories, addCategory, deleteCategory, renameCategoryGlobal, batchUpdateCategoryInProducts } from '../services/dataService';
-import { fetchAllLoyverseItems, LoyverseItem } from '../services/loyverseService';
 
 const Inventory: React.FC<{ user: User }> = ({ user }) => {
   const [view, setView] = useState<'list' | 'form'>('list');
@@ -27,12 +26,6 @@ const Inventory: React.FC<{ user: User }> = ({ user }) => {
   const imageUploadRef = useRef<HTMLInputElement>(null);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
-
-  // Loyverse Sync State
-  const [showLoyverseModal, setShowLoyverseModal] = useState(false);
-  const [loyverseToken, setLoyverseToken] = useState('');
-  const [syncLoading, setSyncLoading] = useState(false);
-  const [syncStatus, setSyncStatus] = useState<{ total: number, matched: number, updated: number } | null>(null);
 
   // Category Manager State
   const [showCategoryModal, setShowCategoryModal] = useState(false);
@@ -466,78 +459,6 @@ const Inventory: React.FC<{ user: User }> = ({ user }) => {
     reader.readAsText(file);
   };
 
-  const handleLoyverseSync = async () => {
-    if (!loyverseToken.trim()) return;
-    
-    setSyncLoading(true);
-    setSyncStatus(null);
-    
-    try {
-      // 1. Fetch all items from Loyverse
-      const loyverseItems = await fetchAllLoyverseItems(loyverseToken.trim());
-      
-      // 2. Prepare local items for mapping
-      const localProducts = [...products];
-      const itemsToUpdate: { id: string, imageUrl: string }[] = [];
-      
-      let matchedCount = 0;
-      let updatedCount = 0;
-
-      for (const product of localProducts) {
-        if (!product.id) continue;
-
-        const match = loyverseItems.find(li => 
-          (li.sku && li.sku.trim().toUpperCase() === product.code.toUpperCase()) ||
-          (li.item_name && li.item_name.trim().toUpperCase() === product.name.toUpperCase())
-        );
-
-        if (match) {
-          matchedCount++;
-          if (match.image_url) {
-            itemsToUpdate.push({ id: product.id, imageUrl: match.image_url });
-          }
-        }
-      }
-
-      // 3. Batch Update local products
-      for (const item of itemsToUpdate) {
-        await updateProduct(item.id, { imageUrl: item.imageUrl });
-        updatedCount++;
-      }
-
-      setSyncStatus({ 
-        total: localProducts.length, 
-        matched: matchedCount, 
-        updated: updatedCount 
-      });
-      loadData(); // Refresh UI
-      
-    } catch (error: any) {
-      console.error('Loyverse Sync Error:', error);
-      const errorData = error.response?.data;
-      let errorMsg = error.message;
-
-      if (errorData) {
-        if (errorData.errors && errorData.errors.length > 0) {
-          // If it's the specific "not found" of a resource, or an array of errors
-          errorMsg = errorData.errors.map((e: any) => e.message || JSON.stringify(e)).join(', ');
-        } else if (errorData.message) {
-          errorMsg = errorData.message;
-        } else {
-          errorMsg = JSON.stringify(errorData);
-        }
-      }
-      
-      alert('Error durante la sincronización: ' + errorMsg + 
-            '\n\nPosibles causas:\n' +
-            '1. El token no tiene el permiso "items:read" (Crea un nuevo token con todos los permisos).\n' +
-            '2. La integración API no está activada en tu cuenta de Loyverse.\n' +
-            '3. Estás usando un token de Webhook en lugar de un Token de Acceso Personal.');
-    } finally {
-      setSyncLoading(false);
-    }
-  };
-
   const filteredProducts = products.filter(p => {
     const matchesSearch = p.name.toLowerCase().includes(searchQuery.toLowerCase()) || p.code.includes(searchQuery);
     const matchesCategory = categoryFilter === 'TODOS' || p.category === categoryFilter;
@@ -570,13 +491,6 @@ const Inventory: React.FC<{ user: User }> = ({ user }) => {
                         />
                         <Button variant="secondary" onClick={() => setShowCategoryModal(true)} className="border-indigo-200 text-indigo-700 bg-indigo-50 hover:bg-indigo-100">
                              <Tags className="w-5 h-5" /> <span className="hidden sm:inline">CATEGORÍAS</span>
-                        </Button>
-                        <Button 
-                            variant="secondary" 
-                            onClick={() => setShowLoyverseModal(true)} 
-                            className="bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100"
-                        >
-                            <ImageIcon className="w-5 h-5" /> <span className="hidden sm:inline">LOYVERSE SYNC</span>
                         </Button>
                         <Button variant="secondary" onClick={handleImportClick} disabled={loading}>
                             <FileUp className="w-5 h-5" /> <span className="hidden sm:inline">IMPORTAR</span>
@@ -1134,88 +1048,6 @@ const Inventory: React.FC<{ user: User }> = ({ user }) => {
                       )}
                   </div>
               </div>
-          </div>
-      </Modal>
-
-      {/* Loyverse Sync Modal */}
-      <Modal
-        isOpen={showLoyverseModal}
-        onClose={() => {
-            if (!syncLoading) {
-                setShowLoyverseModal(false);
-                setSyncStatus(null);
-            }
-        }}
-        title="SINCRONIZAR IMÁGENES LOYVERSE"
-      >
-          <div className="space-y-6">
-              {!syncStatus ? (
-                  <>
-                      <div className="bg-indigo-50 p-4 rounded-2xl flex items-start gap-4">
-                          <AlertCircle className="w-6 h-6 text-indigo-600 flex-shrink-0 mt-0.5" />
-                          <div className="text-sm text-indigo-800 leading-relaxed uppercase font-medium">
-                              Esta herramienta buscará tus productos en Loyverse y vinculará sus imágenes automáticamente usando el <strong>Código (SKU)</strong> o el <strong>Nombre</strong>.
-                          </div>
-                      </div>
-
-                      <div className="space-y-4">
-                          <Input 
-                            label="TOKEN DE ACCESO PERSONAL (LOYVERSE)" 
-                            type="password"
-                            placeholder="PEGA TU TOKEN AQUÍ..."
-                            value={loyverseToken}
-                            onChange={(e) => setLoyverseToken(e.target.value)}
-                          />
-                          <p className="text-[10px] text-slate-400 uppercase leading-normal">
-                              Obtén tu token en el Back Office de Loyverse: <strong>Configuración → Tokens de acceso</strong>.
-                          </p>
-                      </div>
-
-                      <div className="flex gap-3">
-                          <Button 
-                            variant="secondary" 
-                            onClick={() => setShowLoyverseModal(false)}
-                            className="flex-1"
-                            disabled={syncLoading}
-                          >
-                              CANCELAR
-                          </Button>
-                          <Button 
-                            onClick={handleLoyverseSync}
-                            className="flex-1"
-                            disabled={syncLoading || !loyverseToken.trim()}
-                          >
-                              {syncLoading ? 'SINCRONIZANDO...' : 'INICIAR SYNC'}
-                          </Button>
-                      </div>
-                  </>
-              ) : (
-                  <div className="text-center py-4 space-y-6">
-                      <div className="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-4">
-                          <RefreshCw className="w-8 h-8" />
-                      </div>
-                      <div>
-                          <h4 className="text-lg font-bold text-slate-800 uppercase mb-2">Sync Completado</h4>
-                          <div className="grid grid-cols-3 gap-2">
-                              <div className="bg-slate-50 p-4 rounded-2xl">
-                                  <div className="text-xs text-slate-400 font-bold uppercase mb-1">Total</div>
-                                  <div className="text-xl font-black text-slate-800">{syncStatus.total}</div>
-                              </div>
-                              <div className="bg-indigo-50 p-4 rounded-2xl">
-                                  <div className="text-xs text-indigo-400 font-bold uppercase mb-1">Empates</div>
-                                  <div className="text-xl font-black text-indigo-600">{syncStatus.matched}</div>
-                              </div>
-                              <div className="bg-emerald-50 p-4 rounded-2xl">
-                                  <div className="text-xs text-emerald-400 font-bold uppercase mb-1">Fotos</div>
-                                  <div className="text-xl font-black text-emerald-600">{syncStatus.updated}</div>
-                              </div>
-                          </div>
-                      </div>
-                      <Button onClick={() => setShowLoyverseModal(false)} className="w-full">
-                          CERRAR
-                      </Button>
-                  </div>
-              )}
           </div>
       </Modal>
 

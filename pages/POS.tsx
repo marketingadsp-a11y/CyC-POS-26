@@ -943,9 +943,14 @@ const POS: React.FC<POSProps> = ({ onOpenQuickAdd }) => {
                     )}
                     
                     {cart.length === 0 && !appliedDiscount && (
-                        <div className="h-40 flex flex-col items-center justify-center text-slate-300 opacity-60">
-                            <ShoppingCart className="w-12 h-12 mb-2" />
+                        <div className="h-60 flex flex-col items-center justify-center text-slate-300 opacity-60 px-6 text-center">
+                            {settings?.logoUrl ? (
+                                <img src={settings.logoUrl} alt="Logo" className="w-32 h-32 object-contain mb-4 grayscale opacity-50" />
+                            ) : (
+                                <ShoppingCart className="w-12 h-12 mb-2" />
+                            )}
                             <span className="text-sm font-bold uppercase">CARRITO VACÍO</span>
+                            <p className="text-[10px] mt-2 max-w-[200px]">Agregue productos seleccionándolos del catálogo lateral.</p>
                         </div>
                     )}
                 </div>
