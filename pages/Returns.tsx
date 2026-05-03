@@ -21,6 +21,10 @@ const Returns: React.FC = () => {
   const [showReturnModal, setShowReturnModal] = useState(false);
   const [lateFeeAmount, setLateFeeAmount] = useState('');
 
+  // Quick Return Selective Modal
+  const [showQuickReturnModal, setShowQuickReturnModal] = useState(false);
+  const [itemsToReturn, setItemsToReturn] = useState<number[]>([]); // Array of indices in selectedOrder.items
+
   // History Modal State
   const [showHistoryModal, setShowHistoryModal] = useState(false);
   const [historyCustomer, setHistoryCustomer] = useState<Customer | null>(null);
@@ -57,17 +61,48 @@ const Returns: React.FC = () => {
   };
 
   // Immediate Action: Mark as returned (Clean)
-  const handleQuickReturn = async (order: Order) => {
-    if(!confirm(`¿Confirmar recepción de artículos del Ticket #${order.id}?`)) return;
+  const handleQuickReturn = (order: Order) => {
+    setSelectedOrder(order);
+    const rentalIndices = order.items
+      .map((item, index) => ({ item, index }))
+      .filter(({ item }) => item.transactionType === 'rent' && !item.returnedAt)
+      .map(({ index }) => index);
+    
+    setItemsToReturn(rentalIndices); // Default: All pending rentals selected
+    setShowQuickReturnModal(true);
+  };
+
+  const confirmQuickReturn = async () => {
+    if (!selectedOrder || itemsToReturn.length === 0) return;
 
     try {
-        await updateOrder(order.id!, {
-            status: 'returned',
-            returnedAt: Date.now()
-        });
+        const updatedItems = [...selectedOrder.items];
+        const returnTimestamp = Date.now();
         
+        itemsToReturn.forEach(index => {
+            updatedItems[index] = { ...updatedItems[index], returnedAt: returnTimestamp };
+        });
+
+        // Check if ALL rental items are now returned
+        const allRentalsReturned = updatedItems
+            .filter(i => i.transactionType === 'rent')
+            .every(i => i.returnedAt);
+
+        const updateData: Partial<Order> = {
+            items: updatedItems,
+        };
+
+        if (allRentalsReturned) {
+            updateData.status = 'returned';
+            updateData.returnedAt = returnTimestamp;
+        }
+
+        await updateOrder(selectedOrder.id!, updateData as any);
+        
+        setShowQuickReturnModal(false);
+        setSelectedOrder(null);
         alert("Devolución registrada correctamente.");
-        loadData(); // Reload to update lists
+        loadData();
     } catch (e) {
         alert("Error al registrar devolución.");
     }
@@ -160,7 +195,12 @@ const Returns: React.FC = () => {
         o.id?.toLowerCase().includes(searchQuery.toLowerCase()) || 
         o.customer?.name.toLowerCase().includes(searchQuery.toLowerCase());
       
-      const isReturned = o.status === 'returned' || o.status === 'returned_late';
+      // An order is "Returned" if its status is already returned OR if EVERY rental item has a returnedAt
+      const allRentedItemsReturned = o.items
+        .filter(i => i.transactionType === 'rent')
+        .every(i => i.returnedAt);
+
+      const isReturned = o.status === 'returned' || o.status === 'returned_late' || allRentedItemsReturned;
       
       if (viewMode === 'active') return matchesSearch && !isReturned;
       return matchesSearch && isReturned;
@@ -258,12 +298,14 @@ const Returns: React.FC = () => {
                                      </td>
                                      <td className="px-6 py-4">
                                          <div className="flex flex-col gap-1">
-                                             {rentalItems.slice(0, 2).map((item, i) => (
-                                                 <span key={i} className="text-slate-600 uppercase text-xs">• {item.name}</span>
+                                             {rentalItems.map((item, i) => (
+                                                 <div key={i} className="flex items-center gap-2">
+                                                     <span className={`text-xs uppercase ${item.returnedAt ? 'text-emerald-500 line-through opacity-50' : 'text-slate-600'}`}>
+                                                        • {item.name}
+                                                     </span>
+                                                     {item.returnedAt && <CheckCircle className="w-3 h-3 text-emerald-500" />}
+                                                 </div>
                                              ))}
-                                             {rentalItems.length > 2 && (
-                                                 <span className="text-[10px] text-slate-400 italic">+ {rentalItems.length - 2} más</span>
-                                             )}
                                          </div>
                                      </td>
                                      <td className="px-6 py-4 text-slate-500">
@@ -348,6 +390,92 @@ const Returns: React.FC = () => {
                  <Button onClick={() => processLateReturn(true)} variant="secondary" className="w-full uppercase py-4">
                     <User className="w-5 h-5" /> CARGAR A CUENTA DEL CLIENTE
                  </Button>
+             </div>
+         </div>
+      </Modal>
+
+      {/* Quick Return Details Modal */}
+      <Modal isOpen={showQuickReturnModal} onClose={() => setShowQuickReturnModal(false)} title="DEVOLUCIÓN DE ARTÍCULOS">
+         <div className="space-y-6">
+             <div className="bg-indigo-50 border border-indigo-100 p-5 rounded-2xl">
+                 <div className="text-[10px] font-black text-indigo-400 uppercase tracking-widest mb-1">Cliente</div>
+                 <div className="text-lg font-black text-slate-800 uppercase leading-none">{selectedOrder?.customer?.name}</div>
+                 <div className="text-xs text-slate-500 mt-2 flex items-center gap-1.5 font-mono">
+                     <AlertTriangle className="w-3.5 h-3.5" /> TICKET #{selectedOrder?.id}
+                 </div>
+             </div>
+
+             <div className="space-y-3">
+                 <div className="text-[11px] font-black text-slate-400 uppercase tracking-widest flex justify-between items-center">
+                    <span>Selecciona artículos a devolver</span>
+                    <span className="bg-slate-100 px-2 py-0.5 rounded text-slate-500">{itemsToReturn.length} Seleccionados</span>
+                 </div>
+                 
+                 <div className="space-y-2 max-h-[40vh] overflow-y-auto pr-1">
+                    {selectedOrder?.items.filter(i => i.transactionType === 'rent').map((item, i) => {
+                        const originalIndex = selectedOrder.items.indexOf(item);
+                        const isSelected = itemsToReturn.includes(originalIndex);
+                        const alreadyReturned = !!item.returnedAt;
+
+                        return (
+                            <div 
+                                key={i} 
+                                onClick={() => {
+                                    if (alreadyReturned) return;
+                                    setItemsToReturn(prev => 
+                                        prev.includes(originalIndex) 
+                                            ? prev.filter(idx => idx !== originalIndex)
+                                            : [...prev, originalIndex]
+                                    );
+                                }}
+                                className={`flex items-center gap-4 p-4 rounded-xl border-2 transition-all cursor-pointer ${
+                                    alreadyReturned 
+                                        ? 'bg-emerald-50 border-emerald-100 opacity-60 cursor-not-allowed' 
+                                        : isSelected 
+                                            ? 'bg-indigo-600 border-indigo-600 text-white shadow-lg shadow-indigo-100' 
+                                            : 'bg-white border-slate-100 hover:border-indigo-200'
+                                }`}
+                            >
+                                <div className={`w-6 h-6 rounded-lg flex items-center justify-center border-2 ${
+                                    alreadyReturned 
+                                        ? 'bg-emerald-500 border-emerald-500 text-white'
+                                        : isSelected 
+                                            ? 'bg-white/20 border-white text-white' 
+                                            : 'bg-slate-50 border-slate-200 text-transparent'
+                                }`}>
+                                    <CheckCircle className="w-4 h-4" />
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                    <div className={`font-black uppercase text-sm truncate ${isSelected && !alreadyReturned ? 'text-white' : 'text-slate-700'}`}>
+                                        {item.name}
+                                    </div>
+                                    <div className={`text-[10px] font-bold tracking-widest ${isSelected && !alreadyReturned ? 'text-indigo-200' : 'text-slate-400'}`}>
+                                        {alreadyReturned ? 'YA DEVUELTO' : isSelected ? 'POR DEVOLVER' : 'PENDIENTE'}
+                                    </div>
+                                </div>
+                                {!alreadyReturned && !isSelected && (
+                                    <Badge color="amber" className="text-[9px]">PENDIENTE</Badge>
+                                )}
+                            </div>
+                        );
+                    })}
+                 </div>
+             </div>
+
+             <div className="pt-4 space-y-3">
+                 <Button 
+                    disabled={itemsToReturn.length === 0}
+                    onClick={confirmQuickReturn} 
+                    className="w-full uppercase py-6 shadow-2xl text-base"
+                >
+                    <CheckCircle className="w-6 h-6" /> CONFIRMAR RECEPCIÓN
+                 </Button>
+                 <button 
+                    onClick={() => setShowQuickReturnModal(false)}
+                    className="w-full py-3 text-slate-400 font-bold uppercase text-xs tracking-widest hover:text-slate-600 transition-colors"
+                 >
+                    Cancelar
+                 </button>
              </div>
          </div>
       </Modal>

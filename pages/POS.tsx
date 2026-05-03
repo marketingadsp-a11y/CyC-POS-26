@@ -232,9 +232,19 @@ const POS: React.FC<POSProps> = ({ onOpenQuickAdd }) => {
         let price = manualPriceOverride;
         
         if (price === undefined) {
-            price = variation 
-                ? (type === 'sale' ? variation.salePrice : variation.rentalPrice) 
-                : (type === 'sale' ? product.salePrice : product.rentalPrice);
+            if (variation) {
+                const varPrice = type === 'sale' ? variation.salePrice : variation.rentalPrice;
+                // If variation has a price explicitly set (including 0), use it
+                // Note: 0 is explicitly checked later to trigger the manual price modal
+                if (varPrice !== undefined) {
+                    price = varPrice;
+                } else {
+                    // Fallback to product price if variation price is NOT DEFINED
+                    price = type === 'sale' ? product.salePrice : product.rentalPrice;
+                }
+            } else {
+                price = type === 'sale' ? product.salePrice : product.rentalPrice;
+            }
         }
 
         const finalPrice = price || 0;
@@ -1156,7 +1166,12 @@ const POS: React.FC<POSProps> = ({ onOpenQuickAdd }) => {
                                                     className="w-full bg-white border border-indigo-100 hover:border-indigo-500 hover:bg-indigo-50 text-indigo-700 py-2 rounded-xl font-bold uppercase transition-all shadow-sm flex items-center justify-between px-3"
                                                 >
                                                     <span className="text-[10px] opacity-70">RENTA</span>
-                                                    <span className="text-sm font-black">${v.rentalPrice || selectedProductForVariations.rentalPrice}</span>
+                                                    <span className="text-sm font-black">
+                                                        {v.rentalPrice === 0 
+                                                            ? 'DEFINIR' 
+                                                            : `$${v.rentalPrice !== undefined ? v.rentalPrice : selectedProductForVariations.rentalPrice}`
+                                                        }
+                                                    </span>
                                                 </button>
                                             )}
                                             {selectedProductForVariations.isSaleAvailable && (
@@ -1168,7 +1183,12 @@ const POS: React.FC<POSProps> = ({ onOpenQuickAdd }) => {
                                                     className="w-full bg-white border border-emerald-100 hover:border-emerald-500 hover:bg-emerald-50 text-emerald-700 py-2 rounded-xl font-bold uppercase transition-all shadow-sm flex items-center justify-between px-3"
                                                 >
                                                     <span className="text-[10px] opacity-70">VENTA</span>
-                                                    <span className="text-sm font-black">${v.salePrice || selectedProductForVariations.salePrice}</span>
+                                                    <span className="text-sm font-black">
+                                                        {v.salePrice === 0 
+                                                            ? 'DEFINIR' 
+                                                            : `$${v.salePrice !== undefined ? v.salePrice : selectedProductForVariations.salePrice}`
+                                                        }
+                                                    </span>
                                                 </button>
                                             )}
                                         </div>

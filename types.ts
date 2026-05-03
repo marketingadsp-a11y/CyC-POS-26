@@ -99,6 +99,7 @@ export interface CartItem extends Product {
   quantity: number;
   selectedVariation?: Variation;
   appliedPrice: number; // The actual price used for this item (base or variation)
+  returnedAt?: number; // New: When this specific item was returned
 }
 
 export interface Order {

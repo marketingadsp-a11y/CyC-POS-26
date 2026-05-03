@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { CalendarClock, Search, ArrowRight, User, ShoppingBag, CheckCircle, CreditCard, DollarSign, Wallet, ArrowUpRight, ChevronDown, ChevronUp, Info, Phone, Calendar, Smartphone, Banknote, Delete } from 'lucide-react';
+import { CalendarClock, Search, ArrowRight, User, ShoppingBag, CheckCircle, CreditCard, DollarSign, Wallet, ArrowUpRight, ChevronDown, ChevronUp, Info, Phone, Calendar, Smartphone, Banknote, Delete, X } from 'lucide-react';
 import { Button, Input, Modal, Badge } from '../components/UI';
 import { Order, SystemSettings } from '../types';
 import { getOrders, updateOrder, getSystemSettings } from '../services/dataService';
@@ -15,6 +15,10 @@ const Reservations: React.FC = () => {
     const [showDetailsModal, setShowDetailsModal] = useState(false);
     const [settings, setSettings] = useState<SystemSettings | null>(null);
     const [showFullBankCard, setShowFullBankCard] = useState(false);
+    
+    // Image Preview State
+    const [previewImageUrl, setPreviewImageUrl] = useState<string | null>(null);
+    const [showImageModal, setShowImageModal] = useState(false);
     
     // Modal State
     const [showPaymentModal, setShowPaymentModal] = useState(false);
@@ -238,11 +242,21 @@ const Reservations: React.FC = () => {
                                         </td>
                                         <td className="px-6 py-6">
                                             <div className="flex items-center gap-2">
-                                                <div className="flex -space-x-1.5">
+                                                <div className="flex -space-x-1.5" onClick={(e) => e.stopPropagation()}>
                                                     {order.items.slice(0, 3).map((item, idx) => (
-                                                        <div key={idx} className="w-7 h-7 rounded-lg ring-2 ring-white bg-slate-100 overflow-hidden flex-shrink-0" title={item.name}>
+                                                        <div 
+                                                            key={idx} 
+                                                            className={`w-7 h-7 rounded-lg ring-2 ring-white bg-slate-100 overflow-hidden flex-shrink-0 relative group/item ${item.imageUrl ? 'cursor-zoom-in' : ''}`}
+                                                            title={item.name}
+                                                            onClick={() => {
+                                                                if (item.imageUrl) {
+                                                                    setPreviewImageUrl(item.imageUrl);
+                                                                    setShowImageModal(true);
+                                                                }
+                                                            }}
+                                                        >
                                                             {item.imageUrl ? (
-                                                                <img src={item.imageUrl} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                                                                <img src={item.imageUrl} className="w-full h-full object-cover group-hover/item:scale-110 transition-transform" referrerPolicy="no-referrer" />
                                                             ) : (
                                                                 <div className="w-full h-full flex items-center justify-center bg-slate-50">
                                                                     <ShoppingBag className="w-3.5 h-3.5 text-slate-300" />
@@ -297,113 +311,128 @@ const Reservations: React.FC = () => {
                 </div>
             </div>
 
-            {/* ORDER DETAILS MODAL */}
-            <Modal isOpen={showDetailsModal} onClose={() => setShowDetailsModal(false)} title="DETALLE DEL APARTADO" maxWidth="max-w-6xl">
+            {/* ORDER DETAILS MODAL - ULTRA COMPACT VIEW */}
+            <Modal isOpen={showDetailsModal} onClose={() => setShowDetailsModal(false)} title="RESUMEN DE APARTADO" maxWidth="max-w-4xl">
                 {selectedReservation && (
-                    <div className="p-2 md:p-6">
-                        <div className="grid grid-cols-1 xl:grid-cols-12 gap-10">
-                            {/* Left: Summary Cards */}
-                            <div className="xl:col-span-8 space-y-6">
-                                <div className="flex items-center justify-between mb-2">
-                                    <div className="flex items-center gap-3">
-                                        <div className="w-10 h-10 bg-indigo-600 rounded-2xl flex items-center justify-center text-white shadow-xl shadow-indigo-100">
-                                            <ShoppingBag className="w-5 h-5" />
-                                        </div>
-                                        <h4 className="text-base font-black text-slate-800 uppercase tracking-tight">Inventario del Apartado</h4>
-                                    </div>
-                                    <span className="px-3 py-1 bg-indigo-50 text-indigo-600 rounded-full text-[10px] font-black uppercase tracking-widest leading-none flex items-center">
-                                        {selectedReservation.items.length} {selectedReservation.items.length === 1 ? 'ARTÍCULO' : 'ARTÍCULOS'}
-                                    </span>
+                    <div className="p-1">
+                        <div className="grid grid-cols-1 md:grid-cols-12 gap-1 px-4 pb-6">
+                            {/* Left: Compact Items List */}
+                            <div className="md:col-span-7 space-y-3">
+                                <div className="flex items-center justify-between px-1">
+                                    <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Artículos en Reserva</h4>
+                                    <span className="text-[10px] font-black text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full">{selectedReservation.items.length} TOTAL</span>
                                 </div>
-                                
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-h-[50vh] overflow-y-auto pr-2 custom-scrollbar">
+                                <div className="grid grid-cols-1 gap-2">
                                     {selectedReservation.items.map((item, idx) => (
-                                        <div key={idx} className="flex gap-5 p-5 bg-white rounded-3xl border border-slate-100 shadow-sm transition-all group/card">
-                                            <div className="w-24 h-24 rounded-2xl bg-slate-50 border border-slate-100 overflow-hidden flex-shrink-0">
+                                        <div key={idx} className="flex items-center gap-3 p-3 bg-white border border-slate-100 rounded-2xl group/card">
+                                            <div 
+                                                className={`w-12 h-12 rounded-xl bg-slate-50 border border-slate-100 overflow-hidden flex-shrink-0 ${item.imageUrl ? 'cursor-zoom-in' : ''}`}
+                                                onClick={() => {
+                                                    if (item.imageUrl) {
+                                                        setPreviewImageUrl(item.imageUrl);
+                                                        setShowImageModal(true);
+                                                    }
+                                                }}
+                                            >
                                                 {item.imageUrl ? (
-                                                    <img src={item.imageUrl} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                                                    <img src={item.imageUrl} className="w-full h-full object-cover hover:scale-110 transition-transform" referrerPolicy="no-referrer" />
                                                 ) : (
                                                     <div className="w-full h-full flex items-center justify-center">
-                                                        <ShoppingBag className="w-10 h-10 text-slate-200" />
+                                                        <ShoppingBag className="w-6 h-6 text-slate-200" />
                                                     </div>
                                                 )}
                                             </div>
-                                            <div className="flex flex-col justify-center min-w-0 flex-1">
-                                                <div className="font-black text-slate-800 uppercase truncate text-sm mb-0.5 tracking-tight">{item.name}</div>
-                                                <div className="text-[10px] font-black text-slate-300 uppercase tracking-widest mb-3 flex items-center gap-1.5">
-                                                    <span className="w-1.5 h-1.5 bg-slate-200 rounded-full" /> SKU: {item.id?.slice(-8).toUpperCase() || 'MANUAL'}
-                                                </div>
-                                                <div className="flex items-baseline gap-2">
-                                                    <span className="font-black text-indigo-600 text-lg font-mono tracking-tighter">${(item.appliedPrice || 0).toFixed(2)}</span>
-                                                    {(item.transactionType === 'rent' ? item.rentalPrice : item.salePrice) > (item.appliedPrice || 0) && (
-                                                        <span className="text-[11px] text-slate-300 line-through font-bold">${(item.transactionType === 'rent' ? item.rentalPrice : item.salePrice).toFixed(2)}</span>
-                                                    )}
-                                                </div>
+                                            <div className="min-w-0 flex-1">
+                                                <div className="font-black text-slate-800 uppercase truncate text-xs tracking-tight leading-none mb-1">{item.name}</div>
+                                                <div className="text-[9px] font-black text-slate-300 uppercase tracking-widest leading-none">SKU: {item.id?.slice(-5).toUpperCase()}</div>
+                                            </div>
+                                            <div className="text-right">
+                                                <div className="font-black text-indigo-600 text-sm font-mono tracking-tighter leading-none">${(item.appliedPrice || 0).toFixed(2)}</div>
                                             </div>
                                         </div>
                                     ))}
                                 </div>
                             </div>
 
-                            {/* Right: Operational Info */}
-                            <div className="xl:col-span-4 flex flex-col gap-6">
-                                <div className="bg-slate-50 p-8 rounded-[2.5rem] border border-slate-200/50 space-y-6 relative overflow-hidden">
-                                    <div className="absolute top-0 right-0 p-4 opacity-[0.03] rotate-12">
-                                        <User className="w-32 h-32" />
-                                    </div>
-                                    
-                                    <div className="flex items-center gap-3 relative z-10">
-                                        <div className="w-10 h-10 bg-white rounded-2xl flex items-center justify-center text-slate-900 shadow-sm border border-slate-100">
-                                            <User className="w-5 h-5" />
-                                        </div>
-                                        <h4 className="text-base font-black text-slate-800 uppercase tracking-tight">Expediente</h4>
-                                    </div>
-                                    
-                                    <div className="space-y-4 relative z-10">
-                                        <div className="flex justify-between items-end border-b border-slate-200/50 pb-3">
-                                            <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Titular</span>
-                                            <span className="text-slate-800 font-black uppercase text-sm">{selectedReservation.customer?.name}</span>
-                                        </div>
-                                        <div className="flex justify-between items-end border-b border-slate-200/50 pb-3">
-                                            <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Contacto</span>
-                                            <span className="text-slate-800 font-bold flex items-center gap-2 text-sm">
-                                                <Phone className="w-3.5 h-3.5 text-indigo-400" /> {selectedReservation.customer?.phone}
-                                            </span>
-                                        </div>
-                                        <div className="flex justify-between items-end border-b border-slate-200/50 pb-3">
-                                            <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Entrega</span>
-                                            <span className="text-indigo-600 font-black flex items-center gap-2 font-mono text-sm">
-                                                <Calendar className="w-3.5 h-3.5" /> {new Date(selectedReservation.rentalStartDate || 0).toLocaleDateString().toUpperCase()}
-                                            </span>
-                                        </div>
-                                        <div className="flex justify-between items-end border-b border-slate-200/50 pb-3">
-                                            <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Permanencia</span>
-                                            <span className="text-slate-800 font-black text-sm">{selectedReservation.rentalDuration || 1} {selectedReservation.rentalDuration === 1 ? 'DÍA' : 'DÍAS'}</span>
+                            {/* Right: Streamlined Info */}
+                            <div className="md:col-span-5 flex flex-col gap-4 mt-4 md:mt-0 md:pl-6 md:border-l md:border-slate-100">
+                                <div className="space-y-4">
+                                    <div>
+                                        <div className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-3">Información del Cliente</div>
+                                        <div className="bg-slate-50 rounded-2xl p-4 space-y-3">
+                                            <div className="flex justify-between items-center text-xs">
+                                                <span className="font-bold text-slate-400 uppercase text-[9px]">Nombre</span>
+                                                <span className="font-black text-slate-800 uppercase">{selectedReservation.customer?.name}</span>
+                                            </div>
+                                            <div className="flex justify-between items-center text-xs">
+                                                <span className="font-bold text-slate-400 uppercase text-[9px]">Teléfono</span>
+                                                <span className="font-black text-slate-800">{selectedReservation.customer?.phone}</span>
+                                            </div>
+                                            <div className="flex justify-between items-center text-xs">
+                                                <span className="font-bold text-slate-400 uppercase text-[9px]">Fecha Entrega</span>
+                                                <span className="font-black text-indigo-600">{new Date(selectedReservation.rentalStartDate || 0).toLocaleDateString().toUpperCase()}</span>
+                                            </div>
                                         </div>
                                     </div>
 
-                                    <div className="pt-2">
-                                        <div className={`p-4 rounded-2xl flex flex-col items-center justify-center gap-1 border-2 ${selectedReservation.remainingBalance === 0 ? 'bg-emerald-50 border-emerald-100 text-emerald-700' : 'bg-amber-50 border-amber-100 text-amber-700'}`}>
-                                            <span className="text-[10px] font-black uppercase tracking-[0.2em]">Saldo Pendiente</span>
-                                            <span className="text-3xl font-black font-mono tracking-tighter">${(selectedReservation.remainingBalance || 0).toFixed(2)}</span>
+                                    <div className="bg-slate-900 rounded-3xl p-5 text-center shadow-lg shadow-indigo-100">
+                                        <div className="text-[9px] font-black text-indigo-400/60 uppercase tracking-[0.2em] mb-1">Total Saldo Pendiente</div>
+                                        <div className="text-4xl font-black text-white font-mono tracking-tighter leading-none mb-1">
+                                            ${(selectedReservation.remainingBalance || 0).toFixed(2)}
                                         </div>
+                                        <div className="text-[10px] font-black text-white/30 uppercase tracking-widest italic">A pagar por: {selectedReservation.customer?.name.split(' ')[0]}</div>
                                     </div>
                                 </div>
-                                
-                                <button 
-                                    onClick={() => handleOpenPayment(selectedReservation)} 
-                                    className="w-full py-6 bg-indigo-600 group hover:bg-indigo-700 text-white rounded-[2rem] font-black uppercase tracking-[0.2em] shadow-2xl transition-all flex items-center justify-center gap-3 active:scale-[0.98] ring-8 ring-indigo-50"
-                                >
-                                    LIQUIDAR AHORA <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-                                </button>
-                                <Button variant="secondary" onClick={() => setShowDetailsModal(false)} className="py-4 font-black uppercase tracking-widest text-slate-400">
-                                    CERRAR DETALLES
-                                </Button>
+
+                                <div className="mt-auto space-y-2">
+                                    <button 
+                                        onClick={() => handleOpenPayment(selectedReservation)} 
+                                        className="w-full py-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl font-black uppercase tracking-[0.1em] transition-all flex items-center justify-center gap-2 active:scale-[0.98] shadow-lg shadow-indigo-200"
+                                    >
+                                        LIQUIDAR Y ENTREGAR <ArrowRight className="w-5 h-5" />
+                                    </button>
+                                    <button 
+                                        onClick={() => setShowDetailsModal(false)}
+                                        className="w-full py-3 bg-white text-slate-400 font-bold uppercase text-[10px] tracking-widest hover:text-slate-600 transition-colors"
+                                    >
+                                        Cerrar Detalles
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </div>
                 )}
             </Modal>
+
+            {/* IMAGE PREVIEW MODAL */}
+            <AnimatePresence>
+                {showImageModal && (
+                    <div 
+                        className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/90 backdrop-blur-md cursor-zoom-out"
+                        onClick={() => setShowImageModal(false)}
+                    >
+                        <motion.div 
+                            initial={{ scale: 0.9, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            exit={{ scale: 0.9, opacity: 0 }}
+                            className="relative max-w-4xl w-full flex items-center justify-center"
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            <button 
+                                onClick={() => setShowImageModal(false)}
+                                className="absolute -top-12 right-0 text-white/60 hover:text-white transition-colors"
+                            >
+                                <X className="w-8 h-8" />
+                            </button>
+                            <img 
+                                src={previewImageUrl || ''} 
+                                className="w-full h-auto max-h-[85vh] object-contain rounded-3xl shadow-2xl ring-4 ring-white/10" 
+                                referrerPolicy="no-referrer"
+                            />
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
 
             {/* PAYMENT MODAL */}
             <Modal isOpen={showPaymentModal} onClose={() => setShowPaymentModal(false)} title="LIQUIDAR APARTADO" maxWidth="max-w-[1500px]">
