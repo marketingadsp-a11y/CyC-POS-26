@@ -105,93 +105,90 @@ const Login: React.FC<LoginProps> = ({ onLogin, logoUrl, businessName }) => {
       <motion.div 
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="relative z-10 w-full max-w-[400px] flex flex-col items-center"
+        className="relative z-10 w-full max-w-[340px] flex flex-col items-center"
       >
         {/* Hardware-like Card Container */}
-        <div className="w-full bg-slate-900/40 backdrop-blur-2xl border border-white/10 rounded-[2.5rem] p-8 shadow-2xl shadow-black/50">
+        <div className="w-full bg-slate-900/40 backdrop-blur-3xl border border-white/10 rounded-[2rem] p-6 shadow-2xl shadow-black/50">
           
           {/* Logo/Header */}
-          <div className="flex flex-col items-center mb-10 text-center">
+          <div className="flex flex-col items-center mb-6 text-center">
             <motion.div 
               whileHover={{ scale: 1.05 }}
-              className="w-20 h-20 bg-gradient-to-tr from-indigo-500 via-indigo-600 to-purple-600 rounded-[22px] mb-5 flex items-center justify-center shadow-xl shadow-indigo-500/20 overflow-hidden border border-white/20 p-1"
+              className="w-16 h-16 bg-gradient-to-tr from-indigo-500 via-indigo-600 to-purple-600 rounded-[18px] mb-4 flex items-center justify-center shadow-xl shadow-indigo-500/20 overflow-hidden border border-white/20 p-0.5"
             >
                {logoUrl ? (
-                  <img src={logoUrl} alt="Logo" className="w-full h-full object-contain rounded-[18px]" />
+                  <img src={logoUrl} alt="Logo" className="w-full h-full object-contain rounded-[16px]" />
                ) : (
                   <div className="text-white flex flex-col items-center leading-none">
-                     <span className="text-xs font-black uppercase tracking-[0.2em] mb-0.5 opacity-70">POS</span>
-                     <span className="text-3xl font-black italic tracking-tighter">
+                     <span className="text-[8px] font-black uppercase tracking-[0.2em] mb-0.5 opacity-70">POS</span>
+                     <span className="text-2xl font-black italic tracking-tighter">
                        {businessName ? businessName.substring(0, 3) : 'CyC'}
                      </span>
                   </div>
                )}
             </motion.div>
-            <h1 className="text-2xl font-black text-white tracking-tight leading-none">
+            <h1 className="text-xl font-black text-white tracking-tight leading-none uppercase">
               {businessName || 'SISTEMA POS'}
             </h1>
-            <div className="flex items-center gap-1.5 mt-2.5 px-3 py-1 bg-white/5 rounded-full border border-white/5">
-              <ShieldCheck className="w-3.5 h-3.5 text-indigo-400" />
-              <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Acceso Seguro</span>
+            <div className="flex items-center gap-1.5 mt-2 px-3 py-0.5 bg-white/5 rounded-full border border-white/5">
+              <ShieldCheck className="w-3 h-3 text-indigo-400" />
+              <span className="text-[9px] text-slate-400 font-bold uppercase tracking-widest">Seguridad Activa</span>
             </div>
           </div>
 
           {/* Display & Indicator */}
-          <div className="mb-10">
+          <div className="mb-6">
             <motion.div 
               animate={error ? { x: [-5, 5, -5, 5, 0] } : {}}
               transition={{ duration: 0.4 }}
-              className="flex gap-4 justify-center items-center h-12"
+              className="flex gap-3 justify-center items-center h-8"
             >
               {[...Array(6)].map((_, i) => (
                  <motion.div 
                    key={i} 
                    animate={{ 
-                     scale: i < code.length ? 1.2 : 1,
+                     scale: i < code.length ? 1.1 : 1,
                      backgroundColor: i < code.length ? (error ? '#f43f5e' : '#6366f1') : '#1e293b'
                    }}
-                   className={`w-3.5 h-3.5 rounded-full border border-white/5 shadow-inner ${
-                     i < code.length ? (error ? 'shadow-[0_0_15px_#f43f5e]' : 'shadow-[0_0_20px_rgba(99,102,241,0.4)]') : ''
+                   className={`w-2.5 h-2.5 rounded-full border border-white/5 shadow-inner ${
+                     i < code.length ? (error ? 'shadow-[0_0_10px_#f43f5e]' : 'shadow-[0_0_15px_rgba(99,102,241,0.4)]') : ''
                    }`}
                  />
               ))}
             </motion.div>
-            <p className={`text-center text-[11px] font-bold uppercase mt-2 tracking-widest transition-colors duration-300 ${error ? 'text-rose-500' : 'text-slate-500'}`}>
-              {error ? 'Autenticación Fallida' : 'Ingrese su PIN de 6 dígitos'}
+            <p className={`text-center text-[10px] font-bold uppercase mt-1 tracking-widest transition-colors duration-300 ${error ? 'text-rose-500' : 'text-slate-500'}`}>
+              {error ? 'PIN Incorrecto' : 'Acceso Autorizado'}
             </p>
           </div>
 
           {/* Digital Numpad */}
-          <div className="grid grid-cols-3 gap-3 w-full mb-8">
+          <div className="grid grid-cols-3 gap-2 w-full mb-6">
             {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((num) => (
               <motion.button
                 key={num}
-                whileTap={{ scale: 0.9, backgroundColor: 'rgba(99, 102, 241, 0.2)' }}
+                whileTap={{ scale: 0.95, backgroundColor: 'rgba(99, 102, 241, 0.15)' }}
                 onClick={() => handlePress(num.toString())}
-                className="h-16 rounded-2xl bg-white/5 flex flex-col items-center justify-center border border-white/5 hover:border-white/20 transition-colors shadow-sm"
+                className="h-14 rounded-xl bg-white/5 flex flex-col items-center justify-center border border-white/5 hover:border-white/10 transition-colors shadow-sm"
               >
-                <span className="text-white text-2xl font-black">{num}</span>
-                <span className="text-[8px] text-slate-500 font-bold uppercase tracking-tighter opacity-50">
-                  {num === 2 ? 'abc' : num === 3 ? 'def' : num === 4 ? 'ghi' : num === 5 ? 'jkl' : num === 6 ? 'mno' : num === 7 ? 'pqrs' : num === 8 ? 'tuv' : num === 9 ? 'wxyz' : ''}
-                </span>
+                <span className="text-white text-xl font-black">{num}</span>
               </motion.button>
             ))}
-            <div className="h-16 flex items-center justify-center p-3">
-               <Fingerprint className="w-8 h-8 text-slate-700 opacity-20" />
+            <div className="h-14 flex items-center justify-center">
+               <Fingerprint className="w-6 h-6 text-slate-800" />
             </div>
             <motion.button
-              whileTap={{ scale: 0.9, backgroundColor: 'rgba(99, 102, 241, 0.2)' }}
+              whileTap={{ scale: 0.95, backgroundColor: 'rgba(99, 102, 241, 0.15)' }}
               onClick={() => handlePress("0")}
-              className="h-16 rounded-2xl bg-white/5 flex items-center justify-center border border-white/5 hover:border-white/20 transition-colors text-white text-2xl font-black"
+              className="h-14 rounded-xl bg-white/5 flex items-center justify-center border border-white/5 hover:border-white/10 transition-colors text-white text-xl font-black"
             >
               0
             </motion.button>
             <motion.button
-              whileTap={{ scale: 0.9, backgroundColor: 'rgba(244, 63, 94, 0.2)' }}
+              whileTap={{ scale: 0.95, backgroundColor: 'rgba(244, 63, 94, 0.15)' }}
               onClick={handleBackspace}
-              className="h-16 rounded-2xl bg-rose-500/10 flex items-center justify-center border border-rose-500/20 hover:border-rose-500/40 transition-colors text-rose-500"
+              className="h-14 rounded-xl bg-rose-500/5 flex items-center justify-center border border-rose-500/10 hover:border-rose-500/20 transition-colors text-rose-500/80"
             >
-              <Delete className="w-7 h-7" />
+              <Delete className="w-6 h-6" />
             </motion.button>
           </div>
 
@@ -200,14 +197,14 @@ const Login: React.FC<LoginProps> = ({ onLogin, logoUrl, businessName }) => {
             <motion.button 
               disabled={code.length < 4 || loading}
               onClick={handleSubmit}
-              whileHover={code.length >= 4 ? { scale: 1.02 } : {}}
-              whileTap={code.length >= 4 ? { scale: 0.98 } : {}}
-              className={`w-full py-4 rounded-2xl font-black text-sm uppercase tracking-[0.2em] transition-all flex items-center justify-center gap-3 shadow-xl ${
+              whileHover={code.length >= 4 ? { scale: 1.01 } : {}}
+              whileTap={code.length >= 4 ? { scale: 0.99 } : {}}
+              className={`w-full py-3.5 rounded-xl font-black text-[11px] uppercase tracking-[0.25em] transition-all flex items-center justify-center gap-3 shadow-xl ${
                 loading 
                 ? 'bg-slate-800 text-slate-400 cursor-wait' 
                 : code.length < 4 
                   ? 'bg-white/5 text-slate-600 border border-white/5 cursor-not-allowed'
-                  : 'bg-gradient-to-r from-indigo-600 to-indigo-500 text-white shadow-indigo-900/30 ring-2 ring-indigo-400/20 cursor-pointer'
+                  : 'bg-gradient-to-r from-indigo-600 to-indigo-500 text-white shadow-indigo-900/30 ring-1 ring-indigo-400/20 cursor-pointer'
               }`}
             >
               <AnimatePresence mode="wait">
@@ -215,28 +212,23 @@ const Login: React.FC<LoginProps> = ({ onLogin, logoUrl, businessName }) => {
                   <motion.div 
                     key="loading"
                     initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                    className="flex items-center gap-3"
+                    className="flex items-center gap-2"
                   >
-                    <div className="w-4 h-4 border-2 border-slate-600 border-t-indigo-400 rounded-full animate-spin" />
-                    <span>Validando...</span>
+                    <div className="w-3 h-3 border-2 border-slate-600 border-t-indigo-400 rounded-full animate-spin" />
+                    <span>Validando</span>
                   </motion.div>
                 ) : (
                   <motion.div 
                     key="normal"
                     initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                    className="flex items-center gap-3"
+                    className="flex items-center gap-2"
                   >
-                    <Lock className="w-4 h-4" />
-                    <span>Iniciar Sistema</span>
+                    <Lock className="w-3 h-3" />
+                    <span>Entrar</span>
                   </motion.div>
                 )}
               </AnimatePresence>
             </motion.button>
-            
-            {/* Visual glow on hover */}
-            {code.length >= 4 && !loading && (
-              <div className="absolute -inset-0.5 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-2xl blur opacity-20 group-hover:opacity-40 transition pointer-events-none -z-10" />
-            )}
           </div>
         </div>
 
@@ -245,12 +237,15 @@ const Login: React.FC<LoginProps> = ({ onLogin, logoUrl, businessName }) => {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 1 }}
-          className="mt-12 flex flex-col items-center opacity-40 hover:opacity-100 transition-opacity"
+          className="mt-8 flex flex-col items-center opacity-30"
         >
-          <div className="flex items-center gap-8 text-[10px] text-slate-400 font-bold uppercase tracking-[0.3em]">
-            <span>Build 2026.05.03</span>
-            <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full shadow-[0_0_8px_#10b981]" />
-            <span>Server Online</span>
+          <div className="flex items-center gap-6 text-[9px] text-slate-400 font-bold uppercase tracking-[0.3em]">
+            <span>Build 2026.05</span>
+            <div className="flex gap-1">
+              <div className="w-1 h-1 bg-emerald-500 rounded-full animate-pulse" />
+              <div className="w-1 h-1 bg-emerald-500 rounded-full animate-pulse [animation-delay:200ms]" />
+              <div className="w-1 h-1 bg-emerald-500 rounded-full animate-pulse [animation-delay:400ms]" />
+            </div>
           </div>
         </motion.div>
       </motion.div>
