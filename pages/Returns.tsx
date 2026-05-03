@@ -220,7 +220,7 @@ const Returns: React.FC = () => {
                      <tr>
                          <th className="px-6 py-4">Ticket</th>
                          <th className="px-6 py-4">Cliente</th>
-                         <th className="px-6 py-4">Contacto</th> {/* NEW COLUMN */}
+                         <th className="px-6 py-4">Contacto</th>
                          <th className="px-6 py-4">Artículos en Renta</th>
                          <th className="px-6 py-4">Fecha Entrega</th>
                          <th className="px-6 py-4">Fecha Devolución</th>

@@ -1326,11 +1326,18 @@ const POS: React.FC<POSProps> = ({ onOpenQuickAdd }) => {
                                     </label>
                                     
                                     <div className="bg-gradient-to-br from-indigo-600 to-indigo-900 rounded-3xl p-6 text-white shadow-xl relative overflow-hidden text-left aspect-[1.6/1]">
-                                        <div className="absolute top-0 right-0 p-8 opacity-10">
-                                            <Banknote className="w-32 h-32" />
+                                        <div className="absolute top-0 right-0 p-8 opacity-10 pointer-events-none">
+                                            {settings?.logoUrl ? (
+                                                <img src={settings.logoUrl} className="w-32 h-32 object-contain" referrerPolicy="no-referrer" />
+                                            ) : (
+                                                <CreditCard className="w-32 h-32" />
+                                            )}
                                         </div>
                                         <div className="flex justify-between items-start mb-6">
-                                            <span className="text-xl font-black italic tracking-widest uppercase">{settings?.bankName || 'BANCO'}</span>
+                                            <div className="flex items-center gap-2">
+                                                {settings?.logoUrl && <img src={settings.logoUrl} className="w-8 h-8 object-contain brightness-0 invert" referrerPolicy="no-referrer" />}
+                                                <span className="text-xl font-black italic tracking-widest uppercase">{settings?.bankName || 'BANCO'}</span>
+                                            </div>
                                             <div className="w-12 h-10 bg-amber-400 rounded-md opacity-80" />
                                         </div>
                                         <div className="mb-6">
@@ -1446,7 +1453,11 @@ const POS: React.FC<POSProps> = ({ onOpenQuickAdd }) => {
                 <div className="flex flex-col items-center py-8">
                     <div className="bg-gradient-to-br from-indigo-700 to-slate-900 w-full max-w-2xl rounded-[3rem] p-12 text-white shadow-2xl relative overflow-hidden ring-8 ring-indigo-50">
                         <div className="absolute top-0 right-0 p-16 opacity-10">
-                            <Banknote className="w-80 h-80" />
+                             {settings?.logoUrl ? (
+                                <img src={settings.logoUrl} className="w-80 h-80 object-contain" referrerPolicy="no-referrer" />
+                            ) : (
+                                <Banknote className="w-80 h-80" />
+                            )}
                         </div>
                         <div className="flex justify-between items-start mb-16">
                             <span className="text-4xl font-black italic tracking-widest uppercase">{settings?.bankName || 'BANCO'}</span>

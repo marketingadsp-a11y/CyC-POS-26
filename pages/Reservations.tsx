@@ -1,17 +1,22 @@
 
 import React, { useState, useEffect } from 'react';
-import { CalendarClock, Search, ArrowRight, User, ShoppingBag, CheckCircle, CreditCard, DollarSign, Wallet, ArrowUpRight } from 'lucide-react';
+import { CalendarClock, Search, ArrowRight, User, ShoppingBag, CheckCircle, CreditCard, DollarSign, Wallet, ArrowUpRight, ChevronDown, ChevronUp, Info, Phone, Calendar, Smartphone, Banknote, Delete } from 'lucide-react';
 import { Button, Input, Modal, Badge } from '../components/UI';
-import { Order } from '../types';
-import { getOrders, updateOrder } from '../services/dataService';
+import { Order, SystemSettings } from '../types';
+import { getOrders, updateOrder, getSystemSettings } from '../services/dataService';
+import { motion, AnimatePresence } from 'motion/react';
 
 const Reservations: React.FC = () => {
     const [reservations, setReservations] = useState<Order[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
+    const [filterDate, setFilterDate] = useState('');
+    const [selectedReservation, setSelectedReservation] = useState<Order | null>(null);
+    const [showDetailsModal, setShowDetailsModal] = useState(false);
+    const [settings, setSettings] = useState<SystemSettings | null>(null);
+    const [showFullBankCard, setShowFullBankCard] = useState(false);
     
     // Modal State
-    const [selectedReservation, setSelectedReservation] = useState<Order | null>(null);
     const [showPaymentModal, setShowPaymentModal] = useState(false);
     const [paymentMethod, setPaymentMethod] = useState<'cash' | 'card' | 'transfer'>('cash');
     const [amountTendered, setAmountTendered] = useState('');
@@ -22,20 +27,48 @@ const Reservations: React.FC = () => {
 
     const loadData = async () => {
         setLoading(true);
-        const data = await getOrders();
+        const [ordersData, settingsData] = await Promise.all([
+            getOrders(),
+            getSystemSettings()
+        ]);
+        
+        setSettings(settingsData);
         // Filter only 'reservation' status
-        const list = data.filter(o => o.status === 'reservation');
+        const list = ordersData.filter(o => o.status === 'reservation');
         // Sort by delivery date (soonest first)
         list.sort((a, b) => (a.rentalStartDate || 0) - (b.rentalStartDate || 0));
         setReservations(list);
         setLoading(false);
     };
 
+    const handleKeypadPress = (val: string) => {
+        if (val === 'BACK') {
+            setAmountTendered(prev => prev.slice(0, -1));
+        } else if (val === '.') {
+            if (!amountTendered.includes('.')) {
+                setAmountTendered(prev => prev + val);
+            }
+        } else {
+            // Prevent multiple leading zeros
+            if (amountTendered === '0' && val !== '.') {
+                setAmountTendered(val);
+            } else {
+                setAmountTendered(prev => prev + val);
+            }
+        }
+    };
+
     const handleOpenPayment = (order: Order) => {
         setSelectedReservation(order);
         setPaymentMethod('cash');
-        setAmountTendered(''); // Clear input, user must type remaining or tendered amount
+        setAmountTendered('');
+        setShowDetailsModal(false);
         setShowPaymentModal(true);
+    };
+
+    const handleOpenDetails = (order: Order) => {
+        setSelectedReservation(order);
+        setShowDetailsModal(true);
     };
 
     const confirmFinalize = async () => {
@@ -69,159 +102,514 @@ const Reservations: React.FC = () => {
         }
     };
 
-    const filteredReservations = reservations.filter(r => 
-        r.id?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        r.customer?.name.toLowerCase().includes(searchQuery.toLowerCase())
-    );
+    const filteredReservations = reservations.filter(r => {
+        const matchesQuery = 
+            r.id?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            r.customer?.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            r.customer?.phone.toLowerCase().includes(searchQuery.toLowerCase());
+        
+        if (!filterDate) return matchesQuery;
+        
+        // Match specific date
+        const reservationDate = new Date(r.rentalStartDate || 0).toISOString().split('T')[0];
+        return matchesQuery && reservationDate === filterDate;
+    });
 
     return (
         <div className="p-4 md:p-8 max-w-7xl mx-auto h-full flex flex-col">
-            <header className="mb-6 flex flex-col md:flex-row justify-between items-end md:items-center gap-4 flex-shrink-0">
+            <header className="mb-8 flex flex-col md:flex-row justify-between items-end md:items-center gap-4 flex-shrink-0">
                 <div>
-                    <h1 className="text-3xl font-bold text-slate-800 flex items-center gap-3 uppercase">
-                        <CalendarClock className="w-8 h-8 text-indigo-600" />
-                        APARTADOS
+                    <h1 className="text-4xl font-black text-slate-800 flex items-center gap-3 uppercase tracking-tight">
+                        <CalendarClock className="w-10 h-10 text-indigo-600" />
+                        Apartados
                     </h1>
-                    <p className="text-slate-500 mt-2 uppercase">GESTIÓN DE DISFRACES RESERVADOS</p>
+                    <p className="text-slate-400 mt-1 uppercase text-xs font-black tracking-widest">Gestión Centralizada de Reservaciones y Liquidaciones</p>
+                </div>
+                <div className="flex bg-slate-100 p-1 rounded-2xl">
+                    <div className="px-4 py-2 bg-white rounded-xl shadow-sm">
+                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block leading-none mb-1">Pendientes</span>
+                        <span className="text-lg font-black text-slate-800 leading-none">{reservations.length}</span>
+                    </div>
                 </div>
             </header>
 
-            {/* Search */}
-            <div className="relative mb-6 flex-shrink-0">
-                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5" />
-                <input 
-                    type="text" 
-                    placeholder="BUSCAR POR TICKET O CLIENTE..." 
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value.toUpperCase())}
-                    className="w-full pl-12 pr-4 py-4 rounded-2xl bg-white border border-slate-200 shadow-sm focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all uppercase placeholder:normal-case"
-                />
+            {/* Search & Filters */}
+            <div className="flex flex-col md:flex-row gap-6 mb-10 items-end flex-shrink-0">
+                <div className="flex-1 w-full relative">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2 block ml-2">Buscador Inteligente</label>
+                    <div className="relative group">
+                        <Search className="absolute left-6 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-300 group-focus-within:text-indigo-600 transition-colors" />
+                        <input 
+                            type="text"
+                            placeholder="BUSCAR POR CLIENTE, TELÉFONO O FOLIO DE TICKET..."
+                            className="w-full bg-white border border-slate-200 rounded-3xl py-5 pl-14 pr-6 text-sm font-bold uppercase tracking-tight focus:outline-none focus:ring-4 focus:ring-indigo-50 focus:border-indigo-600 transition-all shadow-sm"
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                        />
+                    </div>
+                </div>
+                <div className="w-full md:w-64">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2 block ml-2">Filtrar por Entrega</label>
+                    <div className="relative">
+                        <Calendar className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+                        <input 
+                            type="date"
+                            className="w-full bg-white border border-slate-200 rounded-3xl py-5 pl-12 pr-6 text-sm font-bold uppercase focus:outline-none focus:ring-4 focus:ring-indigo-50 focus:border-indigo-600 transition-all shadow-sm appearance-none"
+                            value={filterDate}
+                            onChange={(e) => setFilterDate(e.target.value)}
+                        />
+                        {filterDate && (
+                            <button 
+                                onClick={() => setFilterDate('')}
+                                className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-300 hover:text-slate-500"
+                            >
+                                <Delete className="w-4 h-4" />
+                            </button>
+                        )}
+                    </div>
+                </div>
             </div>
 
-            {/* List */}
-            <div className="flex-1 overflow-y-auto pb-24">
-                {loading ? (
-                    <div className="text-center py-10 text-slate-400">CARGANDO...</div>
-                ) : filteredReservations.length === 0 ? (
-                    <div className="text-center py-20 text-slate-400 flex flex-col items-center">
-                        <CalendarClock className="w-16 h-16 mb-4 opacity-30" />
-                        <span className="uppercase">NO HAY APARTADOS PENDIENTES</span>
-                    </div>
-                ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                        {filteredReservations.map(order => (
-                            <div key={order.id} className="bg-white rounded-3xl p-5 border border-slate-200 shadow-sm hover:shadow-md transition-all flex flex-col">
-                                <div className="flex justify-between items-start mb-4">
-                                    <div>
-                                        <Badge color="amber">APARTADO</Badge>
-                                        {/* Large Ticket ID */}
-                                        <div className="font-mono font-black text-slate-800 text-4xl mt-2 tracking-tighter">#{order.id?.slice(-6)}</div>
+            {/* Table View */}
+            <div className="flex-1 bg-white rounded-3xl border border-slate-200 overflow-hidden shadow-sm flex flex-col mb-20">
+                <div className="overflow-x-auto">
+                    <table className="w-full text-left border-collapse">
+                        <thead>
+                            <tr className="bg-slate-50/50 border-b border-slate-100">
+                                <th className="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] w-24">Folio</th>
+                                <th className="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Cliente</th>
+                                <th className="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] text-center">Entrega</th>
+                                <th className="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Resumen</th>
+                                <th className="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] text-right">Cuenta</th>
+                                <th className="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] text-right">Saldo</th>
+                                <th className="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] text-center">Estado</th>
+                                <th className="px-4 py-5 w-16"></th>
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100">
+                            {loading ? (
+                                <tr>
+                                    <td colSpan={8} className="px-6 py-20 text-center">
+                                        <div className="flex flex-col items-center">
+                                            <div className="w-10 h-10 border-4 border-indigo-100 border-t-indigo-600 rounded-full animate-spin mb-4" />
+                                            <span className="text-xs font-black text-slate-400 uppercase tracking-widest">Sincronizando datos...</span>
+                                        </div>
+                                    </td>
+                                </tr>
+                            ) : filteredReservations.length === 0 ? (
+                                <tr>
+                                    <td colSpan={8} className="px-6 py-32 text-center">
+                                        <div className="flex flex-col items-center max-w-xs mx-auto">
+                                            <div className="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mb-6">
+                                                <CalendarClock className="w-10 h-10 text-slate-200" />
+                                            </div>
+                                            <h3 className="text-slate-800 font-black uppercase tracking-tight text-xl mb-2">Todo al día</h3>
+                                            <p className="text-slate-400 text-sm font-medium">No se encontraron apartados pendientes que coincidan con tu búsqueda.</p>
+                                        </div>
+                                    </td>
+                                </tr>
+                            ) : (
+                                filteredReservations.map(order => (
+                                    <tr 
+                                        key={order.id}
+                                        onClick={() => handleOpenDetails(order)}
+                                        className={`group cursor-pointer transition-all hover:bg-slate-50/80 ${selectedReservation?.id === order.id && showDetailsModal ? 'bg-indigo-50/40' : ''}`}
+                                    >
+                                        <td className="px-6 py-6 transition-colors">
+                                            <span className="font-mono font-black text-slate-900 group-hover:text-indigo-600 transition-colors uppercase">
+                                                #{order.id?.slice(-5)}
+                                            </span>
+                                        </td>
+                                        <td className="px-6 py-6">
+                                            <div className="flex flex-col">
+                                                <span className="font-black text-slate-800 uppercase text-sm leading-tight mb-1">{order.customer?.name}</span>
+                                                <span className="text-[10px] font-bold text-slate-400 flex items-center gap-1.5">
+                                                    <Phone className="w-3 h-3" /> {order.customer?.phone}
+                                                </span>
+                                            </div>
+                                        </td>
+                                        <td className="px-6 py-6 text-center">
+                                            <div className="inline-flex flex-col">
+                                                <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Entrega</span>
+                                                <Badge color={ (order.rentalStartDate || 0) < Date.now() ? 'rose' : 'blue' } className="font-mono text-xs py-1 px-2">
+                                                    {new Date(order.rentalStartDate || 0).toLocaleDateString(undefined, { day: '2-digit', month: 'short' }).toUpperCase()}
+                                                </Badge>
+                                            </div>
+                                        </td>
+                                        <td className="px-6 py-6">
+                                            <div className="flex items-center gap-2">
+                                                <div className="flex -space-x-1.5">
+                                                    {order.items.slice(0, 3).map((item, idx) => (
+                                                        <div key={idx} className="w-7 h-7 rounded-lg ring-2 ring-white bg-slate-100 overflow-hidden flex-shrink-0" title={item.name}>
+                                                            {item.imageUrl ? (
+                                                                <img src={item.imageUrl} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                                                            ) : (
+                                                                <div className="w-full h-full flex items-center justify-center bg-slate-50">
+                                                                    <ShoppingBag className="w-3.5 h-3.5 text-slate-300" />
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    ))}
+                                                    {order.items.length > 3 && (
+                                                        <div className="w-7 h-7 rounded-lg ring-2 ring-white bg-slate-900 flex items-center justify-center text-[8px] font-black text-white">
+                                                            +{order.items.length - 3}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                                <span className="text-[10px] font-black text-slate-400 uppercase ml-1">
+                                                    {order.items.length} {order.items.length === 1 ? 'Art.' : 'Arts.'}
+                                                </span>
+                                            </div>
+                                        </td>
+                                        <td className="px-6 py-6 text-right">
+                                            <div className="flex flex-col items-end">
+                                                <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Total</span>
+                                                <span className="font-black text-slate-500 text-sm">${order.total.toFixed(2)}</span>
+                                            </div>
+                                        </td>
+                                        <td className="px-6 py-6 text-right">
+                                            <div className="flex flex-col items-end">
+                                                <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Pendiente</span>
+                                                <div className="bg-amber-400/10 px-2 py-1 rounded-md">
+                                                    <span className="font-black text-amber-700 font-mono text-base">${(order.remainingBalance || 0).toFixed(2)}</span>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td className="px-6 py-6 text-center">
+                                            <Badge color="amber" className="text-[9px] px-2 py-0.5 font-black tracking-widest">
+                                                POR LIQUIDAR
+                                            </Badge>
+                                        </td>
+                                        <td className="px-4 py-6" onClick={(e) => e.stopPropagation()}>
+                                            <button 
+                                                onClick={() => handleOpenDetails(order)} 
+                                                className="w-10 h-10 bg-white border border-slate-200 text-slate-400 rounded-xl flex items-center justify-center hover:bg-indigo-50 hover:text-indigo-600 hover:border-indigo-100 transition-all shadow-sm group/btn"
+                                                title="Ver Detalles"
+                                            >
+                                                <Info className="w-5 h-5 group-hover/btn:scale-110 transition-transform" />
+                                            </button>
+                                        </td>
+                                    </tr>
+                                ))
+                            )}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            {/* ORDER DETAILS MODAL */}
+            <Modal isOpen={showDetailsModal} onClose={() => setShowDetailsModal(false)} title="DETALLE DEL APARTADO" maxWidth="max-w-6xl">
+                {selectedReservation && (
+                    <div className="p-2 md:p-6">
+                        <div className="grid grid-cols-1 xl:grid-cols-12 gap-10">
+                            {/* Left: Summary Cards */}
+                            <div className="xl:col-span-8 space-y-6">
+                                <div className="flex items-center justify-between mb-2">
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-10 h-10 bg-indigo-600 rounded-2xl flex items-center justify-center text-white shadow-xl shadow-indigo-100">
+                                            <ShoppingBag className="w-5 h-5" />
+                                        </div>
+                                        <h4 className="text-base font-black text-slate-800 uppercase tracking-tight">Inventario del Apartado</h4>
                                     </div>
-                                    <div className="text-right">
-                                        <div className="text-[10px] font-bold uppercase text-slate-400">ENTREGA</div>
-                                        <div className="font-bold text-indigo-600 text-lg">
-                                            {new Date(order.rentalStartDate || 0).toLocaleDateString()}
+                                    <span className="px-3 py-1 bg-indigo-50 text-indigo-600 rounded-full text-[10px] font-black uppercase tracking-widest leading-none flex items-center">
+                                        {selectedReservation.items.length} {selectedReservation.items.length === 1 ? 'ARTÍCULO' : 'ARTÍCULOS'}
+                                    </span>
+                                </div>
+                                
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-h-[50vh] overflow-y-auto pr-2 custom-scrollbar">
+                                    {selectedReservation.items.map((item, idx) => (
+                                        <div key={idx} className="flex gap-5 p-5 bg-white rounded-3xl border border-slate-100 shadow-sm transition-all group/card">
+                                            <div className="w-24 h-24 rounded-2xl bg-slate-50 border border-slate-100 overflow-hidden flex-shrink-0">
+                                                {item.imageUrl ? (
+                                                    <img src={item.imageUrl} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                                                ) : (
+                                                    <div className="w-full h-full flex items-center justify-center">
+                                                        <ShoppingBag className="w-10 h-10 text-slate-200" />
+                                                    </div>
+                                                )}
+                                            </div>
+                                            <div className="flex flex-col justify-center min-w-0 flex-1">
+                                                <div className="font-black text-slate-800 uppercase truncate text-sm mb-0.5 tracking-tight">{item.name}</div>
+                                                <div className="text-[10px] font-black text-slate-300 uppercase tracking-widest mb-3 flex items-center gap-1.5">
+                                                    <span className="w-1.5 h-1.5 bg-slate-200 rounded-full" /> SKU: {item.id?.slice(-8).toUpperCase() || 'MANUAL'}
+                                                </div>
+                                                <div className="flex items-baseline gap-2">
+                                                    <span className="font-black text-indigo-600 text-lg font-mono tracking-tighter">${(item.appliedPrice || 0).toFixed(2)}</span>
+                                                    {(item.transactionType === 'rent' ? item.rentalPrice : item.salePrice) > (item.appliedPrice || 0) && (
+                                                        <span className="text-[11px] text-slate-300 line-through font-bold">${(item.transactionType === 'rent' ? item.rentalPrice : item.salePrice).toFixed(2)}</span>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* Right: Operational Info */}
+                            <div className="xl:col-span-4 flex flex-col gap-6">
+                                <div className="bg-slate-50 p-8 rounded-[2.5rem] border border-slate-200/50 space-y-6 relative overflow-hidden">
+                                    <div className="absolute top-0 right-0 p-4 opacity-[0.03] rotate-12">
+                                        <User className="w-32 h-32" />
+                                    </div>
+                                    
+                                    <div className="flex items-center gap-3 relative z-10">
+                                        <div className="w-10 h-10 bg-white rounded-2xl flex items-center justify-center text-slate-900 shadow-sm border border-slate-100">
+                                            <User className="w-5 h-5" />
+                                        </div>
+                                        <h4 className="text-base font-black text-slate-800 uppercase tracking-tight">Expediente</h4>
+                                    </div>
+                                    
+                                    <div className="space-y-4 relative z-10">
+                                        <div className="flex justify-between items-end border-b border-slate-200/50 pb-3">
+                                            <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Titular</span>
+                                            <span className="text-slate-800 font-black uppercase text-sm">{selectedReservation.customer?.name}</span>
+                                        </div>
+                                        <div className="flex justify-between items-end border-b border-slate-200/50 pb-3">
+                                            <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Contacto</span>
+                                            <span className="text-slate-800 font-bold flex items-center gap-2 text-sm">
+                                                <Phone className="w-3.5 h-3.5 text-indigo-400" /> {selectedReservation.customer?.phone}
+                                            </span>
+                                        </div>
+                                        <div className="flex justify-between items-end border-b border-slate-200/50 pb-3">
+                                            <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Entrega</span>
+                                            <span className="text-indigo-600 font-black flex items-center gap-2 font-mono text-sm">
+                                                <Calendar className="w-3.5 h-3.5" /> {new Date(selectedReservation.rentalStartDate || 0).toLocaleDateString().toUpperCase()}
+                                            </span>
+                                        </div>
+                                        <div className="flex justify-between items-end border-b border-slate-200/50 pb-3">
+                                            <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Permanencia</span>
+                                            <span className="text-slate-800 font-black text-sm">{selectedReservation.rentalDuration || 1} {selectedReservation.rentalDuration === 1 ? 'DÍA' : 'DÍAS'}</span>
+                                        </div>
+                                    </div>
+
+                                    <div className="pt-2">
+                                        <div className={`p-4 rounded-2xl flex flex-col items-center justify-center gap-1 border-2 ${selectedReservation.remainingBalance === 0 ? 'bg-emerald-50 border-emerald-100 text-emerald-700' : 'bg-amber-50 border-amber-100 text-amber-700'}`}>
+                                            <span className="text-[10px] font-black uppercase tracking-[0.2em]">Saldo Pendiente</span>
+                                            <span className="text-3xl font-black font-mono tracking-tighter">${(selectedReservation.remainingBalance || 0).toFixed(2)}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <button 
+                                    onClick={() => handleOpenPayment(selectedReservation)} 
+                                    className="w-full py-6 bg-indigo-600 group hover:bg-indigo-700 text-white rounded-[2rem] font-black uppercase tracking-[0.2em] shadow-2xl transition-all flex items-center justify-center gap-3 active:scale-[0.98] ring-8 ring-indigo-50"
+                                >
+                                    LIQUIDAR AHORA <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                                </button>
+                                <Button variant="secondary" onClick={() => setShowDetailsModal(false)} className="py-4 font-black uppercase tracking-widest text-slate-400">
+                                    CERRAR DETALLES
+                                </Button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+            </Modal>
+
+            {/* PAYMENT MODAL */}
+            <Modal isOpen={showPaymentModal} onClose={() => setShowPaymentModal(false)} title="LIQUIDAR APARTADO" maxWidth="max-w-[1500px]">
+                 <div className="flex flex-col md:flex-row gap-6">
+                    {/* LEFT SIDE: Info & Payment Methods */}
+                    <div className="flex-1 space-y-6">
+                        <div className="bg-slate-50 p-6 rounded-3xl border border-slate-200">
+                            <div className="text-xs font-black text-slate-400 uppercase tracking-widest mb-2">Resumen de Cuenta</div>
+                            <div className="flex justify-between items-center mb-1">
+                                <span className="text-slate-500 font-bold uppercase text-xs">Total de la Orden</span>
+                                <span className="font-bold text-slate-700">${(selectedReservation?.total || 0).toFixed(2)}</span>
+                            </div>
+                            <div className="flex justify-between items-center mb-3">
+                                <span className="text-slate-500 font-bold uppercase text-xs">Anticipo Pagado</span>
+                                <span className="font-bold text-emerald-600">-${(selectedReservation?.downPayment || 0).toFixed(2)}</span>
+                            </div>
+                            <div className="pt-3 border-t border-slate-200 flex justify-between items-center">
+                                <span className="text-slate-800 font-black uppercase text-sm">Saldo Pendiente</span>
+                                <span className="text-4xl font-black text-indigo-700 font-mono">${(selectedReservation?.remainingBalance || 0).toFixed(2)}</span>
+                            </div>
+                        </div>
+
+                        {/* Payment Method Tabs */}
+                        <div className="grid grid-cols-3 gap-2 bg-slate-100 p-1.5 rounded-2xl">
+                            <button 
+                                onClick={() => {
+                                    setPaymentMethod('cash');
+                                    setAmountTendered('');
+                                }} 
+                                className={`py-4 rounded-xl font-black uppercase text-xs tracking-widest transition-all flex flex-col items-center gap-1 ${paymentMethod === 'cash' ? 'bg-white shadow-xl text-indigo-600 ring-1 ring-black/5' : 'text-slate-400 hover:text-slate-600'}`}
+                            >
+                                <Wallet className="w-5 h-5" /> EFECTIVO
+                            </button>
+                            <button 
+                                onClick={() => {
+                                    setPaymentMethod('card');
+                                    setAmountTendered((selectedReservation?.remainingBalance || 0).toString());
+                                }} 
+                                className={`py-4 rounded-xl font-black uppercase text-xs tracking-widest transition-all flex flex-col items-center gap-1 ${paymentMethod === 'card' ? 'bg-white shadow-xl text-indigo-600 ring-1 ring-black/5' : 'text-slate-400 hover:text-slate-600'}`}
+                            >
+                                <CreditCard className="w-5 h-5" /> TARJETA
+                            </button>
+                            <button 
+                                onClick={() => {
+                                    setPaymentMethod('transfer');
+                                    setAmountTendered((selectedReservation?.remainingBalance || 0).toString());
+                                }} 
+                                className={`py-4 rounded-xl font-black uppercase text-xs tracking-widest transition-all flex flex-col items-center gap-1 ${paymentMethod === 'transfer' ? 'bg-white shadow-xl text-indigo-600 ring-1 ring-black/5' : 'text-slate-400 hover:text-slate-600'}`}
+                            >
+                                <ArrowUpRight className="w-5 h-5" /> TRANSFER
+                            </button>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-4 pt-4">
+                            <Button variant="secondary" onClick={() => setShowPaymentModal(false)} className="uppercase py-4 font-black tracking-widest">CANCELAR</Button>
+                            <Button 
+                                onClick={confirmFinalize} 
+                                className="uppercase shadow-2xl py-4 font-black tracking-widest ring-4 ring-indigo-50"
+                                disabled={paymentMethod === 'cash' && (!amountTendered || parseFloat(amountTendered) < (selectedReservation?.remainingBalance || 0))}
+                            >
+                                <CheckCircle className="w-5 h-5 mr-2" /> FINALIZAR ENTREGA
+                            </Button>
+                        </div>
+                    </div>
+
+                    {/* RIGHT SIDE: Keypad or Bank Card */}
+                    <div className="flex-1 bg-slate-900 p-8 rounded-[3rem] shadow-2xl relative overflow-hidden flex flex-col border border-slate-800">
+                        <div className="absolute top-2 right-8 text-white/5 font-black text-8xl italic select-none">POS</div>
+                        
+                        {paymentMethod === 'transfer' ? (
+                            /* TRANSFER MODE: BANK CARD VIEW */
+                            <div className="relative z-10 flex flex-col h-full">
+                                <div className="text-center mb-8">
+                                    <label className="text-[10px] font-black text-indigo-400 uppercase tracking-widest block mb-4">
+                                        MUESTRA LA SIGUIENTE TARJETA AL CLIENTE PARA LA TRANSFERENCIA
+                                    </label>
+                                    
+                                    <div className="bg-gradient-to-br from-indigo-600 to-indigo-900 rounded-[2.5rem] p-8 text-white shadow-2xl relative overflow-hidden text-left aspect-[1.6/1]">
+                                        <div className="absolute top-0 right-0 p-8 opacity-10 pointer-events-none">
+                                            {settings?.logoUrl ? (
+                                                <img src={settings.logoUrl} className="w-32 h-32 object-contain" referrerPolicy="no-referrer" />
+                                            ) : (
+                                                <CreditCard className="w-32 h-32" />
+                                            )}
+                                        </div>
+                                        <div className="flex justify-between items-start mb-8">
+                                            <div className="flex items-center gap-3">
+                                                {settings?.logoUrl && <img src={settings.logoUrl} className="w-10 h-10 object-contain brightness-0 invert" referrerPolicy="no-referrer" />}
+                                                <span className="text-2xl font-black italic tracking-widest uppercase">{settings?.bankName || 'BANCO'}</span>
+                                            </div>
+                                            <div className="w-14 h-10 bg-amber-400 rounded-lg opacity-80 shadow-inner" />
+                                        </div>
+                                        <div className="mb-8">
+                                            <div className="text-[10px] opacity-60 uppercase mb-1 font-black tracking-widest">Número de Tarjeta / CLABE</div>
+                                            <div className="text-2xl font-mono tracking-[0.1em] font-black">{settings?.bankAccountNumber || '0000 0000 0000 0000'}</div>
+                                        </div>
+                                        <div className="flex justify-between items-end mt-auto">
+                                            <div>
+                                                <div className="text-[10px] opacity-60 uppercase mb-1 font-black tracking-widest">Titular</div>
+                                                <div className="text-sm font-black uppercase tracking-tight">{settings?.bankAccountName || 'TITULAR DE LA CUENTA'}</div>
+                                            </div>
+                                            <div className="text-right">
+                                                <div className="text-[10px] opacity-60 uppercase mb-1 font-black tracking-widest">Importe</div>
+                                                <div className="text-xl font-black font-mono tracking-tight">${(selectedReservation?.remainingBalance || 0).toFixed(2)}</div>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
 
-                                <div className="flex items-center gap-3 mb-4 p-3 bg-slate-50 rounded-xl">
-                                    <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center text-slate-400 shadow-sm">
-                                        <User className="w-5 h-5" />
-                                    </div>
-                                    <div className="overflow-hidden">
-                                        <div className="font-bold text-slate-800 uppercase truncate">{order.customer?.name}</div>
-                                        <div className="text-xs text-slate-500">{order.customer?.phone}</div>
-                                    </div>
-                                </div>
-
-                                <div className="flex-1 mb-4">
-                                    <div className="text-xs font-bold uppercase text-slate-400 mb-2 flex items-center gap-1">
-                                        <ShoppingBag className="w-3 h-3" /> ARTÍCULOS ({order.items.length})
-                                    </div>
-                                    <div className="space-y-1">
-                                        {order.items.map((item, i) => (
-                                            <div key={i} className="text-sm text-slate-600 uppercase truncate">• {item.name}</div>
-                                        ))}
-                                    </div>
-                                </div>
-
-                                <div className="border-t border-slate-100 pt-4 mt-auto">
-                                    <div className="flex justify-between text-sm mb-1">
-                                        <span className="text-slate-500">TOTAL ORDEN</span>
-                                        <span className="font-bold text-slate-700">${order.total.toFixed(2)}</span>
-                                    </div>
-                                    <div className="flex justify-between text-sm mb-3">
-                                        <span className="text-slate-500">ANTICIPO</span>
-                                        <span className="font-bold text-emerald-600">-${(order.downPayment || 0).toFixed(2)}</span>
-                                    </div>
-                                    <div className="flex justify-between items-center bg-indigo-50 p-3 rounded-xl mb-4">
-                                        <span className="font-bold text-indigo-800 text-sm uppercase">RESTA POR PAGAR</span>
-                                        <span className="font-black text-indigo-700 text-xl font-mono">${(order.remainingBalance || 0).toFixed(2)}</span>
-                                    </div>
-
-                                    <Button onClick={() => handleOpenPayment(order)} className="w-full uppercase shadow-lg">
-                                        LIQUIDAR Y ENTREGAR <ArrowRight className="w-4 h-4 ml-2" />
-                                    </Button>
-                                </div>
+                                <Button 
+                                    variant="ghost" 
+                                    onClick={() => setShowFullBankCard(true)}
+                                    className="bg-white/5 hover:bg-white/10 text-white uppercase text-xs font-black border border-white/5 py-4 rounded-2xl"
+                                >
+                                    <Smartphone className="w-5 h-5 mr-3 text-indigo-400" /> VISTA PANTALLA COMPLETA
+                                </Button>
                             </div>
-                        ))}
-                    </div>
-                )}
-            </div>
-
-            {/* PAYMENT MODAL */}
-            <Modal isOpen={showPaymentModal} onClose={() => setShowPaymentModal(false)} title="LIQUIDAR APARTADO">
-                 <div className="space-y-6">
-                    <div className="bg-slate-50 p-4 rounded-2xl text-center border border-slate-200">
-                        <div className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">SALDO PENDIENTE</div>
-                        <div className="text-4xl font-black text-slate-800 font-mono">${(selectedReservation?.remainingBalance || 0).toFixed(2)}</div>
-                    </div>
-
-                    {/* Payment Method Tabs */}
-                    <div className="flex bg-slate-100 p-1 rounded-2xl">
-                        <button onClick={() => setPaymentMethod('cash')} className={`flex-1 py-3 rounded-xl font-bold uppercase text-sm transition-all ${paymentMethod === 'cash' ? 'bg-white shadow-md text-indigo-600' : 'text-slate-500'}`}>
-                            EFECTIVO
-                        </button>
-                        <button onClick={() => setPaymentMethod('card')} className={`flex-1 py-3 rounded-xl font-bold uppercase text-sm transition-all ${paymentMethod === 'card' ? 'bg-white shadow-md text-indigo-600' : 'text-slate-500'}`}>
-                            TARJETA
-                        </button>
-                        <button onClick={() => setPaymentMethod('transfer')} className={`flex-1 py-3 rounded-xl font-bold uppercase text-sm transition-all ${paymentMethod === 'transfer' ? 'bg-white shadow-md text-indigo-600' : 'text-slate-500'}`}>
-                            TRANSFER
-                        </button>
-                    </div>
-
-                    {paymentMethod === 'cash' && (
-                        <div className="space-y-2">
-                             <Input 
-                                label="DINERO RECIBIDO" 
-                                placeholder="$0.00" 
-                                type="number"
-                                className="text-2xl font-bold text-center"
-                                value={amountTendered}
-                                onChange={(e) => setAmountTendered(e.target.value)}
-                                autoFocus
-                            />
-                            {parseFloat(amountTendered) >= (selectedReservation?.remainingBalance || 0) && (
-                                <div className="text-center text-emerald-600 font-bold uppercase bg-emerald-50 p-2 rounded-lg">
-                                    CAMBIO: ${(parseFloat(amountTendered) - (selectedReservation?.remainingBalance || 0)).toFixed(2)}
+                        ) : (
+                            /* NORMAL MODE: KEYPAD */
+                            <>
+                                <div className="mb-8 relative z-10">
+                                    <label className="text-[10px] font-black text-indigo-400 uppercase tracking-widest block mb-4 text-center">
+                                        TECLEE MONTO RECIBIDO
+                                    </label>
+                                    <div className="text-center flex items-center justify-center gap-3">
+                                        <span className="text-indigo-400 text-3xl font-black">$</span>
+                                        <span className="text-6xl font-black text-white font-mono tracking-tighter">
+                                            {amountTendered || '0'}
+                                        </span>
+                                        <motion.span 
+                                            animate={{ opacity: [0, 1, 0] }}
+                                            transition={{ duration: 0.8, repeat: Infinity }}
+                                            className="inline-block w-1.5 h-14 bg-indigo-500 ml-1"
+                                        />
+                                    </div>
+                                    {paymentMethod === 'cash' && amountTendered && parseFloat(amountTendered) >= (selectedReservation?.remainingBalance || 0) && (
+                                        <div className="mt-4 text-center">
+                                            <span className="text-[10px] font-black text-emerald-400 uppercase tracking-widest block mb-1">SU CAMBIO ES DE</span>
+                                            <span className="text-2xl font-black text-emerald-400 font-mono italic">
+                                                ${(parseFloat(amountTendered) - (selectedReservation?.remainingBalance || 0)).toFixed(2)}
+                                            </span>
+                                        </div>
+                                    )}
                                 </div>
-                            )}
-                        </div>
-                    )}
 
-                    {(paymentMethod === 'card' || paymentMethod === 'transfer') && (
-                        <div className="text-center py-4 text-slate-400">
-                             {paymentMethod === 'card' ? <CreditCard className="w-12 h-12 mx-auto mb-2 opacity-50"/> : <ArrowUpRight className="w-12 h-12 mx-auto mb-2 opacity-50"/>}
-                             <p className="uppercase text-sm">PROCESAR COBRO EXTERNO</p>
-                        </div>
-                    )}
-
-                    <div className="grid grid-cols-2 gap-4 pt-2">
-                        <Button variant="secondary" onClick={() => setShowPaymentModal(false)} className="uppercase">CANCELAR</Button>
-                        <Button onClick={confirmFinalize} className="uppercase shadow-lg">CONFIRMAR ENTREGA</Button>
+                                <div className="grid grid-cols-3 gap-3 mb-8 relative z-10 flex-1">
+                                    {[1, 2, 3, 4, 5, 6, 7, 8, 9, '.', 0, 'BACK'].map((key) => (
+                                        <button
+                                            key={key.toString()}
+                                            onClick={() => handleKeypadPress(key.toString())}
+                                            className={`rounded-[1.5rem] flex items-center justify-center text-2xl font-black transition-all active:scale-90 ${
+                                                key === 'BACK' 
+                                                ? 'bg-rose-500/10 text-rose-400 border border-rose-500/30 hover:bg-rose-500/20' 
+                                                : 'bg-white/5 text-white border border-white/5 hover:bg-white/10'
+                                            }`}
+                                        >
+                                            {key === 'BACK' ? <Delete className="w-8 h-8" /> : key}
+                                        </button>
+                                    ))}
+                                </div>
+                            </>
+                        )}
                     </div>
                  </div>
+            </Modal>
+
+            {/* FULL SCREEN BANK CARD MODAL */}
+            <Modal isOpen={showFullBankCard} onClose={() => setShowFullBankCard(false)} title="DATOS BANCARIOS" maxWidth="max-w-4xl">
+                <div className="flex flex-col items-center py-8">
+                    <div className="bg-gradient-to-br from-indigo-700 to-slate-900 w-full max-w-2xl rounded-[3rem] p-12 text-white shadow-2xl relative overflow-hidden ring-8 ring-indigo-50">
+                        <div className="absolute top-0 right-0 p-16 opacity-10">
+                             {settings?.logoUrl ? (
+                                <img src={settings.logoUrl} className="w-80 h-80 object-contain" referrerPolicy="no-referrer" />
+                            ) : (
+                                <Banknote className="w-80 h-80" />
+                            )}
+                        </div>
+                        <div className="flex justify-between items-start mb-16">
+                            <span className="text-4xl font-black italic tracking-widest uppercase">{settings?.bankName || 'BANCO'}</span>
+                            <div className="w-20 h-16 bg-amber-400 rounded-xl shadow-lg opacity-90" />
+                        </div>
+                        <div className="mb-20">
+                            <div className="text-sm opacity-60 uppercase mb-4 tracking-widest font-black">Número de Tarjeta / CLABE</div>
+                            <div className="text-4xl md:text-5xl font-mono tracking-[0.1em] font-black drop-shadow-lg">
+                                {settings?.bankAccountNumber || '0000 0000 0000 0000'}
+                            </div>
+                        </div>
+                        <div className="flex justify-between items-end">
+                            <div>
+                                <div className="text-sm opacity-60 uppercase mb-2 tracking-widest font-black">Titular de la Cuenta</div>
+                                <div className="text-2xl font-black uppercase tracking-tight">{settings?.bankAccountName || 'TITULAR'}</div>
+                            </div>
+                            <div className="text-right">
+                                <div className="text-sm opacity-60 uppercase mb-2 tracking-widest font-black">Importe de Liquidación</div>
+                                <div className="text-4xl font-black">${(selectedReservation?.remainingBalance || 0).toFixed(2)}</div>
+                            </div>
+                        </div>
+                    </div>
+                    <p className="mt-12 text-slate-400 font-bold uppercase tracking-widest text-sm">MUESTRA ESTA TARJETA PARA RECIBIR LA TRANSFERENCIA</p>
+                    <Button 
+                        onClick={() => setShowFullBankCard(false)}
+                        className="mt-8 py-4 px-12 bg-slate-900 text-white rounded-full uppercase font-black tracking-widest text-lg shadow-2xl"
+                    >
+                        CERRAR VISTA
+                    </Button>
+                </div>
             </Modal>
         </div>
     );
