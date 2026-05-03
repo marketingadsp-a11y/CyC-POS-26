@@ -23,6 +23,7 @@ const Returns: React.FC = () => {
 
   // Quick Return Selective Modal
   const [showQuickReturnModal, setShowQuickReturnModal] = useState(false);
+  const [returnMode, setReturnMode] = useState<'all' | 'partial'>('all');
   const [itemsToReturn, setItemsToReturn] = useState<number[]>([]); // Array of indices in selectedOrder.items
 
   // History Modal State
@@ -68,18 +69,30 @@ const Returns: React.FC = () => {
       .filter(({ item }) => item.transactionType === 'rent' && !item.returnedAt)
       .map(({ index }) => index);
     
-    setItemsToReturn(rentalIndices); // Default: All pending rentals selected
+    setItemsToReturn(rentalIndices); 
+    setReturnMode('all'); // Default to everything
     setShowQuickReturnModal(true);
   };
 
   const confirmQuickReturn = async () => {
-    if (!selectedOrder || itemsToReturn.length === 0) return;
+    if (!selectedOrder) return;
+
+    // Determine which indices to return based on mode
+    let targetIndices = itemsToReturn;
+    if (returnMode === 'all') {
+        targetIndices = selectedOrder.items
+            .map((item, index) => ({ item, index }))
+            .filter(({ item }) => item.transactionType === 'rent' && !item.returnedAt)
+            .map(({ index }) => index);
+    }
+
+    if (targetIndices.length === 0) return;
 
     try {
         const updatedItems = [...selectedOrder.items];
         const returnTimestamp = Date.now();
         
-        itemsToReturn.forEach(index => {
+        targetIndices.forEach(index => {
             updatedItems[index] = { ...updatedItems[index], returnedAt: returnTimestamp };
         });
 
@@ -397,82 +410,143 @@ const Returns: React.FC = () => {
       {/* Quick Return Details Modal */}
       <Modal isOpen={showQuickReturnModal} onClose={() => setShowQuickReturnModal(false)} title="DEVOLUCIÓN DE ARTÍCULOS">
          <div className="space-y-6">
-             <div className="bg-indigo-50 border border-indigo-100 p-5 rounded-2xl">
-                 <div className="text-[10px] font-black text-indigo-400 uppercase tracking-widest mb-1">Cliente</div>
-                 <div className="text-lg font-black text-slate-800 uppercase leading-none">{selectedOrder?.customer?.name}</div>
-                 <div className="text-xs text-slate-500 mt-2 flex items-center gap-1.5 font-mono">
-                     <AlertTriangle className="w-3.5 h-3.5" /> TICKET #{selectedOrder?.id}
+             <div className="bg-indigo-50 border border-indigo-100 p-5 rounded-2xl relative overflow-hidden">
+                 <div className="absolute top-0 right-0 p-4 opacity-[0.05] -rotate-12">
+                     <ShoppingBag className="w-24 h-24" />
                  </div>
+                 <div className="relative z-10">
+                    <div className="text-[10px] font-black text-indigo-400 uppercase tracking-widest mb-1">Cliente</div>
+                    <div className="text-xl font-black text-slate-800 uppercase leading-none">{selectedOrder?.customer?.name}</div>
+                    <div className="text-xs text-slate-500 mt-2 flex items-center gap-1.5 font-mono">
+                        <Receipt className="w-3.5 h-3.5" /> TICKET #{selectedOrder?.id?.slice(-8).toUpperCase()}
+                    </div>
+                 </div>
+             </div>
+
+             {/* Mode Selector */}
+             <div className="grid grid-cols-2 p-1.5 bg-slate-100 rounded-[1.25rem] border border-slate-200">
+                <button 
+                    onClick={() => setReturnMode('all')}
+                    className={`flex items-center justify-center gap-2 py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${returnMode === 'all' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
+                >
+                    <CheckCircle className="w-4 h-4" /> Todo
+                </button>
+                <button 
+                    onClick={() => setReturnMode('partial')}
+                    className={`flex items-center justify-center gap-2 py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${returnMode === 'partial' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
+                >
+                    <AlertTriangle className="w-4 h-4" /> Parcial
+                </button>
              </div>
 
              <div className="space-y-3">
-                 <div className="text-[11px] font-black text-slate-400 uppercase tracking-widest flex justify-between items-center">
-                    <span>Selecciona artículos a devolver</span>
-                    <span className="bg-slate-100 px-2 py-0.5 rounded text-slate-500">{itemsToReturn.length} Seleccionados</span>
-                 </div>
-                 
-                 <div className="space-y-2 max-h-[40vh] overflow-y-auto pr-1">
-                    {selectedOrder?.items.filter(i => i.transactionType === 'rent').map((item, i) => {
-                        const originalIndex = selectedOrder.items.indexOf(item);
-                        const isSelected = itemsToReturn.includes(originalIndex);
-                        const alreadyReturned = !!item.returnedAt;
-
-                        return (
-                            <div 
-                                key={i} 
-                                onClick={() => {
-                                    if (alreadyReturned) return;
-                                    setItemsToReturn(prev => 
-                                        prev.includes(originalIndex) 
-                                            ? prev.filter(idx => idx !== originalIndex)
-                                            : [...prev, originalIndex]
-                                    );
-                                }}
-                                className={`flex items-center gap-4 p-4 rounded-xl border-2 transition-all cursor-pointer ${
-                                    alreadyReturned 
-                                        ? 'bg-emerald-50 border-emerald-100 opacity-60 cursor-not-allowed' 
-                                        : isSelected 
-                                            ? 'bg-indigo-600 border-indigo-600 text-white shadow-lg shadow-indigo-100' 
-                                            : 'bg-white border-slate-100 hover:border-indigo-200'
-                                }`}
-                            >
-                                <div className={`w-6 h-6 rounded-lg flex items-center justify-center border-2 ${
-                                    alreadyReturned 
-                                        ? 'bg-emerald-500 border-emerald-500 text-white'
-                                        : isSelected 
-                                            ? 'bg-white/20 border-white text-white' 
-                                            : 'bg-slate-50 border-slate-200 text-transparent'
-                                }`}>
-                                    <CheckCircle className="w-4 h-4" />
-                                </div>
-                                <div className="flex-1 min-w-0">
-                                    <div className={`font-black uppercase text-sm truncate ${isSelected && !alreadyReturned ? 'text-white' : 'text-slate-700'}`}>
-                                        {item.name}
+                 {returnMode === 'all' ? (
+                     <div className="space-y-3">
+                         <div className="text-[11px] font-black text-slate-400 uppercase tracking-widest px-1">Artículos a recibir (Todos)</div>
+                         <div className="space-y-2">
+                             {selectedOrder?.items
+                                .filter(i => i.transactionType === 'rent' && !i.returnedAt)
+                                .map((item, i) => (
+                                    <div key={i} className="flex items-center gap-3 p-3 bg-emerald-50 border border-emerald-100 rounded-xl">
+                                        <div className="w-8 h-8 bg-emerald-500 rounded-lg flex items-center justify-center text-white">
+                                            <CheckCircle className="w-4 h-4" />
+                                        </div>
+                                        <span className="font-black text-emerald-900 uppercase text-xs truncate flex-1">{item.name}</span>
+                                        <Badge color="green" className="text-[9px]">OK</Badge>
                                     </div>
-                                    <div className={`text-[10px] font-bold tracking-widest ${isSelected && !alreadyReturned ? 'text-indigo-200' : 'text-slate-400'}`}>
-                                        {alreadyReturned ? 'YA DEVUELTO' : isSelected ? 'POR DEVOLVER' : 'PENDIENTE'}
-                                    </div>
-                                </div>
-                                {!alreadyReturned && !isSelected && (
-                                    <Badge color="amber" className="text-[9px]">PENDIENTE</Badge>
-                                )}
+                                ))
+                             }
+                             {selectedOrder?.items.filter(i => i.transactionType === 'rent' && !i.returnedAt).length === 0 && (
+                                 <div className="text-center py-4 text-slate-400 uppercase text-xs italic">No hay artículos pendientes de devolución</div>
+                             )}
+                         </div>
+                     </div>
+                 ) : (
+                    <>
+                        <div className="text-[11px] font-black text-slate-400 uppercase tracking-widest flex justify-between items-center px-1">
+                            <span>Artículos entregados hoy</span>
+                            <div className="flex gap-2">
+                                <button 
+                                    onClick={() => {
+                                        const pending = selectedOrder?.items
+                                            .map((item, idx) => ({ item, idx }))
+                                            .filter(({ item }) => item.transactionType === 'rent' && !item.returnedAt)
+                                            .map(({ idx }) => idx) || [];
+                                        setItemsToReturn(pending);
+                                    }}
+                                    className="text-[9px] font-black text-indigo-600 hover:text-indigo-800 uppercase"
+                                >
+                                    Todos
+                                </button>
+                                <span className="text-slate-200">|</span>
+                                <button 
+                                    onClick={() => setItemsToReturn([])}
+                                    className="text-[9px] font-black text-slate-400 hover:text-slate-600 uppercase"
+                                >
+                                    Ninguno
+                                </button>
                             </div>
-                        );
-                    })}
-                 </div>
+                        </div>
+                        
+                        <div className="space-y-2 max-h-[35vh] overflow-y-auto pr-1 custom-scrollbar">
+                            {selectedOrder?.items.filter(i => i.transactionType === 'rent').map((item, i) => {
+                                const originalIndex = selectedOrder.items.indexOf(item);
+                                const isSelected = itemsToReturn.includes(originalIndex) || !!item.returnedAt;
+                                const alreadyReturned = !!item.returnedAt;
+
+                                return (
+                                    <div 
+                                        key={i} 
+                                        onClick={() => {
+                                            if (alreadyReturned) return;
+                                            setItemsToReturn(prev => 
+                                                prev.includes(originalIndex) 
+                                                    ? prev.filter(idx => idx !== originalIndex)
+                                                    : [...prev, originalIndex]
+                                            );
+                                        }}
+                                        className={`flex items-center gap-4 p-4 rounded-xl border-2 transition-all cursor-pointer ${
+                                            alreadyReturned 
+                                                ? 'bg-slate-50 border-slate-100 opacity-60 cursor-not-allowed' 
+                                                : itemsToReturn.includes(originalIndex)
+                                                    ? 'bg-indigo-50 border-indigo-200 shadow-sm' 
+                                                    : 'bg-white border-slate-100 hover:border-indigo-100'
+                                        }`}
+                                    >
+                                        <div className={`w-6 h-6 rounded-lg flex items-center justify-center border-2 transition-colors ${
+                                            alreadyReturned || itemsToReturn.includes(originalIndex)
+                                                ? 'bg-indigo-600 border-indigo-600 text-white'
+                                                : 'bg-white border-slate-200 text-transparent'
+                                        }`}>
+                                            <CheckCircle className="w-4 h-4" />
+                                        </div>
+                                        <div className="flex-1 min-w-0">
+                                            <div className={`font-black uppercase text-xs truncate ${alreadyReturned || itemsToReturn.includes(originalIndex) ? 'text-slate-900' : 'text-slate-600'}`}>
+                                                {item.name}
+                                            </div>
+                                            <div className="text-[9px] font-bold tracking-widest text-slate-400 uppercase">
+                                                {alreadyReturned ? 'Recibido Anteriormente' : itemsToReturn.includes(originalIndex) ? 'Entrega Actual' : 'Pendiente'}
+                                            </div>
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </>
+                 )}
              </div>
 
-             <div className="pt-4 space-y-3">
+             <div className="pt-2 space-y-3">
                  <Button 
-                    disabled={itemsToReturn.length === 0}
+                    disabled={returnMode === 'partial' && itemsToReturn.length === 0}
                     onClick={confirmQuickReturn} 
-                    className="w-full uppercase py-6 shadow-2xl text-base"
+                    className={`w-full uppercase py-6 shadow-2xl text-base font-black tracking-widest transition-all ${returnMode === 'all' ? 'bg-emerald-600 hover:bg-emerald-700 shadow-emerald-100' : ''}`}
                 >
-                    <CheckCircle className="w-6 h-6" /> CONFIRMAR RECEPCIÓN
+                    {returnMode === 'all' ? 'CONFIRMAR ENTREGA COMPLETA' : `RECIBIR ${itemsToReturn.length} ARTÍCULOS`}
                  </Button>
                  <button 
                     onClick={() => setShowQuickReturnModal(false)}
-                    className="w-full py-3 text-slate-400 font-bold uppercase text-xs tracking-widest hover:text-slate-600 transition-colors"
+                    className="w-full py-3 text-slate-400 font-black uppercase text-[10px] tracking-widest hover:text-slate-600 transition-colors"
                  >
                     Cancelar
                  </button>

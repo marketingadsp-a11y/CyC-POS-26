@@ -26,6 +26,7 @@ const POS: React.FC<POSProps> = ({ onOpenQuickAdd }) => {
 
     // View State
     const [viewMode, setViewMode] = useState<'categories' | 'all'>('categories');
+    const [availabilityFilter, setAvailabilityFilter] = useState<'ALL' | 'RENT' | 'SALE'>('ALL');
     const [selectedCategory, setSelectedCategory] = useState<string | null>(null); // For Drill-down in 'categories' view
     const [filterCategory, setFilterCategory] = useState<string>('TODOS'); // For Filter in 'all' view
 
@@ -581,9 +582,16 @@ const POS: React.FC<POSProps> = ({ onOpenQuickAdd }) => {
     const filteredProducts = useMemo(() => {
         let result = products;
 
+        // Apply Availability Filter
+        if (availabilityFilter === 'RENT') {
+            result = result.filter(p => p.isRentalAvailable);
+        } else if (availabilityFilter === 'SALE') {
+            result = result.filter(p => p.isSaleAvailable);
+        }
+
         if (searchQuery) {
             const q = searchQuery.toUpperCase();
-            return products.filter(p => p.name.includes(q) || p.code.includes(q));
+            return result.filter(p => p.name.includes(q) || p.code.includes(q));
         }
 
         if (viewMode === 'categories') {
@@ -599,7 +607,7 @@ const POS: React.FC<POSProps> = ({ onOpenQuickAdd }) => {
         }
 
         return result;
-    }, [products, searchQuery, viewMode, selectedCategory, filterCategory]);
+    }, [products, searchQuery, viewMode, selectedCategory, filterCategory, availabilityFilter]);
 
     const availableCategories = useMemo(() => {
         const catMap = new Map<string, { name: string, imageUrl?: string }>();
@@ -698,18 +706,33 @@ const POS: React.FC<POSProps> = ({ onOpenQuickAdd }) => {
                      {/* View Toggle */}
                     <div className="flex bg-slate-100 p-1 rounded-xl flex-shrink-0">
                         <button 
-                            onClick={() => { setViewMode('categories'); setSelectedCategory(null); }}
+                            onClick={() => { setViewMode('categories'); setSelectedCategory(null); setAvailabilityFilter('ALL'); }}
                             className={`p-2 rounded-lg transition-all ${viewMode === 'categories' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
                             title="Por Categorías"
                         >
                             <LayoutGrid className="w-5 h-5" />
                         </button>
                         <button 
-                             onClick={() => setViewMode('all')}
-                             className={`p-2 rounded-lg transition-all ${viewMode === 'all' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
+                             onClick={() => { setViewMode('all'); setAvailabilityFilter('ALL'); }}
+                             className={`p-2 rounded-lg transition-all ${viewMode === 'all' && availabilityFilter === 'ALL' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
                              title="Catálogo Completo"
                         >
                              <ListFilter className="w-5 h-5" />
+                        </button>
+                        <div className="w-px h-4 bg-slate-200 self-center mx-1" />
+                        <button 
+                             onClick={() => { setViewMode('all'); setAvailabilityFilter('RENT'); }}
+                             className={`p-2 rounded-lg transition-all ${viewMode === 'all' && availabilityFilter === 'RENT' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
+                             title="Sólo Renta"
+                        >
+                             <Shirt className="w-5 h-5" />
+                        </button>
+                        <button 
+                             onClick={() => { setViewMode('all'); setAvailabilityFilter('SALE'); }}
+                             className={`p-2 rounded-lg transition-all ${viewMode === 'all' && availabilityFilter === 'SALE' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
+                             title="Sólo Venta"
+                        >
+                             <Tag className="w-5 h-5" />
                         </button>
                     </div>
 
@@ -1138,6 +1161,7 @@ const POS: React.FC<POSProps> = ({ onOpenQuickAdd }) => {
                 isOpen={showVariationModal} 
                 onClose={() => { setShowVariationModal(false); setSelectedProductForVariations(null); }} 
                 title="SELECCIONAR VARIANTE"
+                hideHeader
             >
                 {selectedProductForVariations && (
                     <div className="space-y-6">
@@ -1205,7 +1229,7 @@ const POS: React.FC<POSProps> = ({ onOpenQuickAdd }) => {
             </Modal>
 
             {/* MANUAL PRICE MODAL (Zero Price Items) - Compact Version for iPad */}
-            <Modal isOpen={showPriceModal} onClose={() => setShowPriceModal(false)} title="ASIGNAR PRECIO">
+            <Modal isOpen={showPriceModal} onClose={() => setShowPriceModal(false)} title="ASIGNAR PRECIO" hideHeader>
                 <div className="flex flex-col gap-4">
                     {/* Compact Header & Display Area */}
                     <div className="bg-slate-900 rounded-2xl p-4 shadow-lg border border-slate-700">
@@ -1278,7 +1302,7 @@ const POS: React.FC<POSProps> = ({ onOpenQuickAdd }) => {
             </Modal>
 
             {/* PAYMENT MODAL - Two Column Layout for iPad */}
-            <Modal isOpen={showPaymentModal} onClose={() => handleClosePayment()} title={isApartadoMode ? "CONFIRMAR APARTADO" : "FINALIZAR VENTA"} maxWidth="max-w-[1500px]">
+            <Modal isOpen={showPaymentModal} onClose={() => handleClosePayment()} title={isApartadoMode ? "CONFIRMAR APARTADO" : "FINALIZAR VENTA"} maxWidth="max-w-[1500px]" hideHeader>
                  <div className="flex flex-col md:flex-row gap-6">
                     {/* LEFT SIDE: Payment Methods & Info */}
                     <div className="flex-1 space-y-6">
@@ -1345,7 +1369,10 @@ const POS: React.FC<POSProps> = ({ onOpenQuickAdd }) => {
                                         MUESTRA LA SIGUIENTE TARJETA AL CLIENTE PARA REALIZAR LA TRANSFERENCIA
                                     </label>
                                     
-                                    <div className="bg-gradient-to-br from-indigo-600 to-indigo-900 rounded-3xl p-6 text-white shadow-xl relative overflow-hidden text-left aspect-[1.6/1]">
+                                    <div className="bg-gradient-to-br from-indigo-700 via-indigo-900 to-slate-900 rounded-[2rem] p-6 text-white shadow-2xl relative overflow-hidden text-left aspect-[1.6/1] border border-white/10 group">
+                                        {/* Glossy Overlay */}
+                                        <div className="absolute inset-0 bg-gradient-to-tr from-white/5 to-transparent pointer-events-none" />
+                                        
                                         <div className="absolute top-0 right-0 p-8 opacity-10 pointer-events-none">
                                             {settings?.logoUrl ? (
                                                 <img src={settings.logoUrl} className="w-32 h-32 object-contain" referrerPolicy="no-referrer" />
@@ -1353,25 +1380,41 @@ const POS: React.FC<POSProps> = ({ onOpenQuickAdd }) => {
                                                 <CreditCard className="w-32 h-32" />
                                             )}
                                         </div>
-                                        <div className="flex justify-between items-start mb-6">
+
+                                        <div className="flex justify-between items-start mb-6 relative z-10">
                                             <div className="flex items-center gap-2">
-                                                {settings?.logoUrl && <img src={settings.logoUrl} className="w-8 h-8 object-contain brightness-0 invert" referrerPolicy="no-referrer" />}
-                                                <span className="text-xl font-black italic tracking-widest uppercase">{settings?.bankName || 'BANCO'}</span>
+                                                <div className="p-1.5 bg-white/10 rounded-lg backdrop-blur-md border border-white/10">
+                                                    {settings?.logoUrl ? (
+                                                        <img src={settings.logoUrl} className="w-6 h-6 object-contain brightness-0 invert" referrerPolicy="no-referrer" />
+                                                    ) : (
+                                                        <Banknote className="w-6 h-6" />
+                                                    )}
+                                                </div>
+                                                <span className="text-lg font-black italic tracking-widest uppercase">{settings?.bankName || 'BANCO'}</span>
                                             </div>
-                                            <div className="w-12 h-10 bg-amber-400 rounded-md opacity-80" />
+                                            {/* Smart Chip */}
+                                            <div className="w-12 h-10 bg-gradient-to-br from-amber-200 via-amber-400 to-amber-600 rounded-md shadow-inner flex items-center justify-between p-1.5 opacity-90">
+                                                <div className="w-px h-full bg-black/10" />
+                                                <div className="w-px h-full bg-black/10" />
+                                                <div className="w-px h-full bg-black/10" />
+                                            </div>
                                         </div>
-                                        <div className="mb-6">
-                                            <div className="text-[10px] opacity-60 uppercase mb-1">Número de Tarjeta / CLABE</div>
-                                            <div className="text-xl font-mono tracking-widest font-bold">{settings?.bankAccountNumber || '0000 0000 0000 0000'}</div>
+
+                                        <div className="mt-4 mb-8 relative z-10">
+                                            <div className="text-[10px] font-black text-indigo-300 uppercase tracking-[0.2em] mb-2 opacity-70">Número de Tarjeta / CLABE</div>
+                                            <div className="text-xl font-mono tracking-[0.15em] font-black drop-shadow-md text-white">
+                                                {settings?.bankAccountNumber || '0000 0000 0000 0000'}
+                                            </div>
                                         </div>
-                                        <div className="flex justify-between items-end mt-auto">
-                                            <div>
-                                                <div className="text-[10px] opacity-60 uppercase mb-1">Titular</div>
-                                                <div className="text-sm font-bold uppercase line-clamp-1">{settings?.bankAccountName || 'TITULAR DE LA CUENTA'}</div>
+
+                                        <div className="flex justify-between items-end mt-auto relative z-10">
+                                            <div className="min-w-0 flex-1 mr-2">
+                                                <div className="text-[10px] font-black text-indigo-300 uppercase tracking-wider mb-1 opacity-70">Titular de la Cuenta</div>
+                                                <div className="text-[11px] font-black uppercase tracking-tight leading-tight">{settings?.bankAccountName || 'TITULAR DE LA CUENTA'}</div>
                                             </div>
                                             <div className="text-right shrink-0">
-                                                <div className="text-[10px] opacity-60 uppercase mb-1">Tipo</div>
-                                                <div className="text-xs font-bold uppercase">Transfer</div>
+                                                <div className="text-[10px] font-black text-indigo-300 uppercase tracking-wider mb-1 opacity-70">Método</div>
+                                                <div className="text-[10px] font-black uppercase bg-white/10 px-2 py-0.5 rounded border border-white/10">TRANSFER</div>
                                             </div>
                                         </div>
                                     </div>
@@ -1468,50 +1511,87 @@ const POS: React.FC<POSProps> = ({ onOpenQuickAdd }) => {
                  </div>
             </Modal>
 
-            {/* FULL SCREEN BANK CARD MODAL */}
-            <Modal isOpen={showFullBankCard} onClose={() => setShowFullBankCard(false)} title="DATOS BANCARIOS" maxWidth="max-w-4xl">
-                <div className="flex flex-col items-center py-8">
-                    <div className="bg-gradient-to-br from-indigo-700 to-slate-900 w-full max-w-2xl rounded-[3rem] p-12 text-white shadow-2xl relative overflow-hidden ring-8 ring-indigo-50">
-                        <div className="absolute top-0 right-0 p-16 opacity-10">
+                       <Modal isOpen={showFullBankCard} onClose={() => setShowFullBankCard(false)} title="DATOS BANCARIOS" maxWidth="max-w-5xl" hideHeader>
+                <div className="flex flex-col items-center py-4 md:py-12 relative h-full">
+                    <div className="bg-gradient-to-br from-indigo-700 via-indigo-900 to-slate-950 w-full max-w-4xl rounded-[3rem] p-8 md:p-12 lg:p-16 text-white shadow-[0_50px_100px_-20px_rgba(0,0,0,0.5)] relative overflow-hidden flex flex-col min-h-[400px] md:min-h-[550px] border border-white/10 ring-[12px] ring-indigo-50/10">
+                        {/* High Quality Gloss */}
+                        <div className="absolute inset-0 bg-gradient-to-tr from-white/10 via-transparent to-transparent opacity-40 pointer-events-none" />
+                        
+                        {/* Decorative background element */}
+                        <div className="absolute -bottom-24 -left-24 w-96 h-96 bg-indigo-500/20 rounded-full blur-[100px] pointer-events-none" />
+                        <div className="absolute -top-24 -right-24 w-96 h-96 bg-emerald-500/10 rounded-full blur-[100px] pointer-events-none" />
+
+                        <div className="absolute top-0 right-0 p-16 opacity-5">
                              {settings?.logoUrl ? (
-                                <img src={settings.logoUrl} className="w-80 h-80 object-contain" referrerPolicy="no-referrer" />
+                                <img src={settings.logoUrl} className="w-96 h-96 object-contain" referrerPolicy="no-referrer" />
                             ) : (
-                                <Banknote className="w-80 h-80" />
+                                <Banknote className="w-96 h-96" />
                             )}
                         </div>
-                        <div className="flex justify-between items-start mb-16">
-                            <span className="text-4xl font-black italic tracking-widest uppercase">{settings?.bankName || 'BANCO'}</span>
-                            <div className="w-20 h-16 bg-amber-400 rounded-xl shadow-lg opacity-90" />
+
+                        <div className="flex justify-between items-start mb-8 md:mb-12 relative z-10">
+                            <div className="flex flex-col gap-2">
+                                <span className="text-3xl md:text-5xl font-black italic tracking-widest uppercase flex items-center gap-4">
+                                    {settings?.logoUrl && <img src={settings.logoUrl} className="w-12 h-12 object-contain brightness-0 invert" referrerPolicy="no-referrer" />}
+                                    {settings?.bankName || 'BANCO'}
+                                </span>
+                                <div className="text-[10px] md:text-xs font-black text-indigo-300/60 uppercase tracking-[0.3em] font-mono">Premium Account Business</div>
+                            </div>
+                            
+                            {/* Premium Metallic Chip */}
+                            <div className="w-20 md:w-28 h-14 md:h-20 bg-gradient-to-br from-amber-200 via-amber-400 to-amber-500 rounded-xl shadow-[inset_0_1px_2px_rgba(255,255,255,0.5),_0_5px_25px_rgba(0,0,0,0.2)] opacity-95 flex items-center justify-between p-3 md:p-4">
+                                <div className="w-px h-full bg-black/10 rounded-full" />
+                                <div className="w-px h-full bg-black/10 rounded-full" />
+                                <div className="w-px h-full bg-black/10 rounded-full" />
+                                <div className="w-px h-full bg-black/10 rounded-full" />
+                            </div>
                         </div>
-                        <div className="mb-20">
-                            <div className="text-sm opacity-60 uppercase mb-4 tracking-widest font-black">Número de Tarjeta / CLABE</div>
-                            <div className="text-4xl md:text-5xl font-mono tracking-[0.1em] font-black drop-shadow-lg">
+
+                        <div className="mb-8 md:mb-16 relative z-10">
+                            <div className="text-[11px] md:text-sm font-black text-indigo-300 uppercase mb-4 md:mb-6 tracking-[0.5em] opacity-80 flex items-center gap-3">
+                                <span>Número de Tarjeta / CLABE</span>
+                                <div className="h-px flex-1 bg-white/10" />
+                            </div>
+                            <div className="text-3xl sm:text-4xl md:text-6xl font-mono tracking-[0.1em] font-black drop-shadow-[0_4px_4px_rgba(0,0,0,0.5)] text-white bg-black/10 py-4 px-6 rounded-2xl border border-white/5 inline-block">
                                 {settings?.bankAccountNumber || '0000 0000 0000 0000'}
                             </div>
                         </div>
-                        <div className="flex justify-between items-end">
-                            <div>
-                                <div className="text-sm opacity-60 uppercase mb-2 tracking-widest font-black">Titular de la Cuenta</div>
-                                <div className="text-2xl font-black uppercase tracking-tight">{settings?.bankAccountName || 'TITULAR'}</div>
+
+                        <div className="flex flex-col md:flex-row justify-between items-start md:items-end relative z-10 mt-auto gap-8">
+                            <div className="min-w-0 flex-1 w-full">
+                                <div className="text-[11px] md:text-sm font-black text-indigo-300 uppercase mb-3 md:mb-4 tracking-[0.3em] opacity-80">Titular de la Cuenta</div>
+                                <div className="text-2xl md:text-4xl font-black uppercase tracking-tight leading-tight border-l-4 border-indigo-500 pl-4 bg-white/5 py-3 rounded-r-xl truncate">
+                                    {settings?.bankAccountName || 'TITULAR DE LA CUENTA'}
+                                </div>
                             </div>
-                            <div className="text-right">
-                                <div className="text-sm opacity-60 uppercase mb-2 tracking-widest font-black">Importe Total</div>
-                                <div className="text-4xl font-black">${total.toFixed(2)}</div>
+                            <div className="text-left md:text-right shrink-0 w-full md:w-auto">
+                                <div className="text-[11px] md:text-sm font-black text-indigo-300 uppercase mb-3 md:mb-4 tracking-[0.3em] opacity-80">Importe Total</div>
+                                <div className="text-4xl sm:text-5xl md:text-7xl font-black text-emerald-400 font-mono tracking-tighter drop-shadow-[0_0_30px_rgba(52,211,153,0.4)]">
+                                    ${total.toFixed(2)}
+                                </div>
                             </div>
                         </div>
                     </div>
-                    <p className="mt-12 text-slate-400 font-bold uppercase tracking-widest text-sm">ESCANEÉ O TECLEE LOS DATOS PARA TRANSFERIR</p>
-                    <Button 
-                        onClick={() => setShowFullBankCard(false)}
-                        className="mt-8 py-4 px-12 bg-slate-900 text-white rounded-full uppercase font-black tracking-widest text-lg"
-                    >
-                        CERRAR VISTA
-                    </Button>
+                    
+                    <div className="mt-8 md:mt-16 flex flex-col items-center gap-8 w-full max-w-xl">
+                        <div className="flex items-center gap-4 w-full">
+                            <div className="h-px flex-1 bg-slate-200" />
+                            <p className="text-slate-400 font-black uppercase tracking-[0.4em] text-[10px] md:text-xs text-center">ESCANEÉ O TECLEE LOS DATOS PARA TRANSFERIR</p>
+                            <div className="h-px flex-1 bg-slate-200" />
+                        </div>
+                        
+                        <Button 
+                            onClick={() => setShowFullBankCard(false)}
+                            className="py-5 px-16 bg-slate-900 text-white rounded-full uppercase font-black tracking-widest text-xl shadow-2xl hover:scale-105 active:scale-95 transition-all w-full md:w-auto"
+                        >
+                            CERRAR VISTA
+                        </Button>
+                    </div>
                 </div>
             </Modal>
 
             {/* --- SUCCESS MODAL --- */}
-            <Modal isOpen={!!lastOrder} onClose={handleNewSale} title="VENTA COMPLETADA">
+            <Modal isOpen={!!lastOrder} onClose={handleNewSale} title="VENTA COMPLETADA" hideHeader>
                 <div className="text-center space-y-6">
                     <div className="flex flex-col items-center animate-in zoom-in duration-300">
                         <div className="w-20 h-20 bg-emerald-100 rounded-full flex items-center justify-center mb-4 text-emerald-600 shadow-lg shadow-emerald-100">

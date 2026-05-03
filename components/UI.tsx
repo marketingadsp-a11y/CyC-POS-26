@@ -74,7 +74,7 @@ export const Badge: React.FC<{ children: React.ReactNode; color?: 'indigo' | 'gr
   );
 };
 
-export const Modal: React.FC<{ isOpen: boolean; onClose: () => void; title: string; children: React.ReactNode; maxWidth?: string }> = ({ isOpen, onClose, title, children, maxWidth = 'max-w-lg' }) => {
+export const Modal: React.FC<{ isOpen: boolean; onClose: () => void; title: string; children: React.ReactNode; maxWidth?: string; hideHeader?: boolean }> = ({ isOpen, onClose, title, children, maxWidth = 'max-w-lg', hideHeader = false }) => {
   
   // Handle Escape key to close
   useEffect(() => {
@@ -97,13 +97,23 @@ export const Modal: React.FC<{ isOpen: boolean; onClose: () => void; title: stri
   
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-in fade-in">
-      <div className={`bg-white rounded-3xl shadow-2xl w-full ${maxWidth} overflow-hidden flex flex-col max-h-[90vh]`}>
-        <div className="bg-white p-6 border-b border-slate-100 flex justify-between items-center">
-          <h3 className="text-xl font-bold text-slate-800 uppercase">{title}</h3>
-          <button onClick={onClose} className="p-2 bg-slate-50 rounded-full hover:bg-slate-100 transition-colors">
-            <X className="w-5 h-5 text-slate-500" />
-          </button>
-        </div>
+      <div className={`bg-white rounded-3xl shadow-2xl w-full ${maxWidth} overflow-hidden flex flex-col max-h-[95vh]`}>
+        {!hideHeader && (
+          <div className="bg-white p-6 border-b border-slate-100 flex justify-between items-center">
+            <h3 className="text-xl font-bold text-slate-800 uppercase">{title}</h3>
+            <button onClick={onClose} className="p-2 bg-slate-50 rounded-full hover:bg-slate-100 transition-colors">
+              <X className="w-5 h-5 text-slate-500" />
+            </button>
+          </div>
+        )}
+        {hideHeader && (
+           <button 
+             onClick={onClose} 
+             className="absolute top-6 right-6 z-20 p-2 bg-white/80 backdrop-blur-sm shadow-lg rounded-full hover:bg-white transition-colors"
+           >
+             <X className="w-5 h-5 text-slate-500" />
+           </button>
+        )}
         <div className="p-6 overflow-y-auto">
           {children}
         </div>
