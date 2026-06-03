@@ -41,7 +41,7 @@ const Settings: React.FC<{ user: User }> = ({ user }) => {
   const [bankAccountNumber, setBankAccountNumber] = useState<string>('');
   const [zettleScheme, setZettleScheme] = useState<'zettle'|'izettle'>('zettle');
   const [zettlePath, setZettlePath] = useState<'payment'|'payment-v1'|'payment-v2'|'pay'>('payment-v2');
-  const [zettleAmountFormat, setZettleAmountFormat] = useState<'decimal'|'cents'|'integer'>('decimal');
+  const [zettleAmountFormat, setZettleAmountFormat] = useState<'decimal'|'decimal-comma'|'cents'|'integer'>('decimal');
   const [isUploadingLogo, setIsUploadingLogo] = useState(false);
   
   // Ticket Sequence Settings
@@ -666,9 +666,10 @@ const Settings: React.FC<{ user: User }> = ({ user }) => {
                                 <Select
                                     label="FORMATO DEL MONTO"
                                     value={zettleAmountFormat}
-                                    onChange={(e) => setZettleAmountFormat(e.target.value as 'decimal' | 'cents' | 'integer')}
+                                    onChange={(e) => setZettleAmountFormat(e.target.value as 'decimal' | 'decimal-comma' | 'cents' | 'integer')}
                                 >
                                     <option value="decimal">Decimal ($10.50)</option>
+                                    <option value="decimal-comma">Decimal con Coma ($10,50)</option>
                                     <option value="cents">Multiplicar por 100 ($1050 céntimos)</option>
                                     <option value="integer">Enteros sin decimal ($10)</option>
                                 </Select>

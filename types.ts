@@ -75,7 +75,7 @@ export interface SystemSettings {
   bankAccountNumber?: string; // New: Account number for transfers
   zettleScheme?: 'zettle' | 'izettle'; // Custom scheme for Zettle App Integration
   zettlePath?: 'payment' | 'payment-v1' | 'payment-v2' | 'pay'; // Path variation for Zettle url integration
-  zettleAmountFormat?: 'decimal' | 'cents' | 'integer'; // Formats for amount (decimal e.g. 10.00, cents multiplier e.g. 1000, integer e.g. 10)
+  zettleAmountFormat?: 'decimal' | 'decimal-comma' | 'cents' | 'integer'; // Formats for amount (decimal e.g. 10.00, comma-decimal 10,00, cents multiplier e.g. 1000, integer e.g. 10)
 }
 
 export interface Expense {

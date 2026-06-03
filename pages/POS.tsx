@@ -120,7 +120,7 @@ const POS: React.FC<POSProps> = ({ onOpenQuickAdd }) => {
             if (!zettleStatus) return;
 
             const ref = query.get('ref') || '';
-            const amountVal = parseFloat(query.get('amount') || '0');
+            const amountVal = parseFloat(query.get('totalPaid') || query.get('amount') || '0');
 
             if (zettleStatus === 'success') {
                 try {
@@ -616,8 +616,9 @@ const POS: React.FC<POSProps> = ({ onOpenQuickAdd }) => {
         localStorage.setItem('zettle_pending_sale', JSON.stringify(pendingSale));
 
         // Formulate callback URLs which return here (keep standard decimal here for seamless callback parsing)
+        // We use 'totalPaid' in successUrl instead of 'amount' to avoid duplicate parameter keywords in the deep link parser
         const callbackUrl = window.location.origin + window.location.pathname;
-        const successUrl = `${callbackUrl}?zettle=success&ref=${ref}&amount=${total.toFixed(2)}`;
+        const successUrl = `${callbackUrl}?zettle=success&ref=${ref}&totalPaid=${total.toFixed(2)}`;
         const errorUrl = `${callbackUrl}?zettle=error&ref=${ref}`;
         const cancelUrl = `${callbackUrl}?zettle=cancel&ref=${ref}`;
 
@@ -627,7 +628,9 @@ const POS: React.FC<POSProps> = ({ onOpenQuickAdd }) => {
         const format = settings?.zettleAmountFormat || 'decimal';
 
         let amountStr = total.toFixed(2);
-        if (format === 'cents') {
+        if (format === 'decimal-comma') {
+            amountStr = total.toFixed(2).replace('.', ',');
+        } else if (format === 'cents') {
             amountStr = Math.round(total * 100).toString();
         } else if (format === 'integer') {
             amountStr = Math.round(total).toString();
