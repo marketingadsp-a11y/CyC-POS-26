@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Delete, Lock, ShieldCheck, Activity, AlertCircle, HelpCircle, Check } from 'lucide-react';
+import { Delete, ShieldCheck, AlertCircle, Check, Sparkles } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { User } from '../types';
 import { getUserByCode, updateUser } from '../services/dataService';
@@ -55,26 +55,26 @@ const Login: React.FC<LoginProps> = ({ onLogin, logoUrl, businessName }) => {
     if (activeCode.length < 4) return;
     setLoading(true);
     
-    // Aesthetic 2026 feedback transition
+    // Aesthetic feedback transition
     await new Promise(r => setTimeout(r, 600));
 
     // 1. Super Admin checking
     if (activeCode === '012004') {
       onLogin({ 
-        name: 'Cristobal', 
-        code: '012004', 
-        role: 'admin',
-        permissions: {
-            canAccessPOS: true,
-            canViewReports: true,
-            canManageSettings: true,
-            canManageInventory: true,
-            canManageUsers: true,
-            canRefund: true,
-            canDeleteCustomers: true,
-            canManageExpenses: true,
-            canApplyDiscounts: true
-        }
+         name: 'Cristobal', 
+         code: '012004', 
+         role: 'admin',
+         permissions: {
+             canAccessPOS: true,
+             canViewReports: true,
+             canManageSettings: true,
+             canManageInventory: true,
+             canManageUsers: true,
+             canRefund: true,
+             canDeleteCustomers: true,
+             canManageExpenses: true,
+             canApplyDiscounts: true
+         }
       });
       return;
     }
@@ -107,81 +107,100 @@ const Login: React.FC<LoginProps> = ({ onLogin, logoUrl, businessName }) => {
   }, [code]);
 
   return (
-    <div className="min-h-screen bg-[#07080f] flex flex-col items-center justify-center p-4 relative overflow-hidden font-sans select-none">
+    <div className="min-h-screen bg-slate-50/90 flex flex-col items-center justify-center p-4 relative overflow-hidden font-sans select-none">
       
-      {/* 2026 Kinetic Aurora Ambient Nebula */}
-      <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
-        {/* Soft Indigo Fluid Sphere */}
+      {/* Dynamic Pastel Fluid Background (Apple Liquid Style) */}
+      <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden bg-gradient-to-tr from-[#f3e8ff]/70 via-[#e0f2fe]/60 to-[#ffedd5]/50">
+        
+        {/* Soft Violet/Lavender Liquid Orb */}
         <motion.div 
           animate={{ 
-            scale: [1, 1.12, 0.92, 1.05, 1],
-            x: [0, 20, -15, 10, 0],
-            y: [0, -15, 25, -10, 0],
-            opacity: [0.15, 0.25, 0.18, 0.28, 0.15]
+            scale: [1, 1.25, 0.9, 1.15, 1],
+            x: [-40, 60, -30, 40, -40],
+            y: [-30, 40, -50, 20, -30],
+            opacity: [0.4, 0.6, 0.5, 0.65, 0.4]
           }}
-          transition={{ duration: 18, repeat: Infinity, ease: "easeInOut" }}
-          className="absolute top-1/4 left-1/4 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-gradient-to-tr from-indigo-500/30 via-indigo-600/10 to-transparent rounded-full blur-[100px]"
+          transition={{ duration: 25, repeat: Infinity, ease: "easeInOut" }}
+          className="absolute top-1/4 left-1/4 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[700px] bg-gradient-to-tr from-violet-300 via-indigo-200 to-transparent rounded-full blur-[110px]"
         />
         
-        {/* Neon Emerald/Cyan Accents */}
+        {/* Peach / Sunrise Orb */}
         <motion.div 
           animate={{ 
-            scale: [1, 1.2, 0.95, 1.1, 1],
-            x: [0, -30, 20, -10, 0],
-            y: [0, 25, -20, 15, 0],
-            opacity: [0.08, 0.15, 0.12, 0.18, 0.08]
+            scale: [1, 1.15, 1.3, 0.95, 1],
+            x: [50, -40, 60, -20, 50],
+            y: [30, -50, 40, -30, 30],
+            opacity: [0.35, 0.55, 0.45, 0.6, 0.35]
           }}
-          transition={{ duration: 14, repeat: Infinity, ease: "easeInOut" }}
-          className="absolute bottom-1/4 right-1/4 translate-x-1/2 translate-y-1/2 w-[500px] h-[500px] bg-gradient-to-tr from-cyan-400/20 via-blue-500/5 to-transparent rounded-full blur-[110px]"
+          transition={{ duration: 20, repeat: Infinity, ease: "easeInOut" }}
+          className="absolute bottom-1/4 right-1/4 translate-x-1/2 translate-y-1/2 w-[600px] h-[600px] bg-gradient-to-tr from-amber-200 via-rose-200 to-transparent rounded-full blur-[100px]"
         />
 
-        {/* High-end Ultra-fine Laser Grid */}
-        <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.01)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.01)_1px,transparent_1px)] bg-[size:24px_24px] [mask-image:radial-gradient(ellipse_at_center,black_30%,transparent_70%)] opacity-80" />
+        {/* Soft Sky Blue / Turquoise Glass Orb */}
+        <motion.div 
+          animate={{ 
+            scale: [1, 1.2, 0.85, 1.1, 1],
+            x: [20, -60, 40, -10, 20],
+            y: [60, 20, -40, 50, 60],
+            opacity: [0.3, 0.5, 0.4, 0.55, 0.3]
+          }}
+          transition={{ duration: 22, repeat: Infinity, ease: "easeInOut" }}
+          className="absolute top-1/2 right-1/3 w-[550px] h-[550px] bg-gradient-to-tr from-sky-200 via-teal-100 to-transparent rounded-full blur-[120px]"
+        />
+
+        {/* Very subtle noise grid representing tactile paper-gloss finish */}
+        <div className="absolute inset-0 bg-[linear-gradient(rgba(0,0,0,0.003)_1px,transparent_1px),linear-gradient(90deg,rgba(0,0,0,0.003)_1px,transparent_1px)] bg-[size:32px_32px] opacity-100" />
       </div>
 
       {/* Main Container */}
       <motion.div 
-        initial={{ opacity: 0, scale: 0.97 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ type: "spring", stiffness: 100, damping: 22 }}
-        className="relative z-10 w-full max-w-[310px] flex flex-col items-center"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ type: "spring", stiffness: 100, damping: 20 }}
+        className="relative z-10 w-full max-w-[325px] flex flex-col items-center"
       >
-        {/* Mini Active Hud Header representing 2026 Micro-UX */}
-        <div className="w-full flex justify-between items-center px-4 mb-3 text-slate-500 text-[9px] font-mono tracking-widest uppercase">
-          <div className="flex items-center gap-1.5 bg-white/[0.02] border border-white/5 py-1 px-2.5 rounded-full backdrop-blur-xl shadow-inner">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-            <span className="font-semibold text-slate-400">CYC-SECURE v2.26</span>
+        {/* Micro HUD Status Bar - Apple Style */}
+        <div className="w-full flex justify-between items-center px-4 mb-4 text-slate-500 text-[10px] font-semibold tracking-wider">
+          <div className="flex items-center gap-1.5 bg-white/70 border border-white/80 py-1 px-3 rounded-full shadow-[0_2px_8px_rgba(0,0,0,0.02),inset_0_1px_1px_rgba(255,255,255,0.7)] backdrop-blur-md">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_6px_rgba(16,185,129,0.5)]" />
+            <span className="text-slate-600 uppercase tracking-widest text-[8px] font-bold">CYC SECURE</span>
           </div>
-          <div className="text-right text-slate-400 font-medium">
+          <div className="text-right text-slate-600 font-semibold tracking-wide bg-white/70 border border-white/80 py-1 px-3 rounded-full shadow-[0_2px_8px_rgba(0,0,0,0.02),inset_0_1px_1px_rgba(255,255,255,0.7)] backdrop-blur-md">
             {formatClockTime()}
           </div>
         </div>
 
-        {/* Sculpted Cyber Capsule Form */}
-        <div className={`w-full bg-[#0a0d1d]/60 backdrop-blur-[40px] border transition-all duration-300 rounded-[2.25rem] p-6 shadow-2xl relative overflow-hidden ${
+        {/* Liquid Glass Apple Card */}
+        <div className={`w-full transition-all duration-500 rounded-[2.5rem] p-7 relative overflow-hidden backdrop-blur-[45px] ${
           error 
-            ? 'border-rose-500/50 shadow-[0_0_40px_rgba(244,63,94,0.15)] bg-rose-950/[0.03]' 
-            : 'border-white/[0.08] hover:border-white/[0.12] shadow-indigo-950/20'
+            ? 'bg-rose-50/70 border border-rose-300/60 shadow-[0_25px_50px_-12px_rgba(225,29,72,0.15),inset_0_1px_3px_rgba(255,255,255,0.9)]' 
+            : 'bg-white/45 border border-white/70 shadow-[0_25px_60px_-15px_rgba(15,23,42,0.08),inset_0_1px_3px_rgba(255,255,255,0.85)]'
         }`}>
-          {/* Internal premium rim light glow */}
-          <div className="absolute inset-0 bg-gradient-to-tr from-white/[0.02] via-transparent to-white/[0.04] pointer-events-none" />
+          {/* Internal premium specular glass glare reflection overlay */}
+          <div className="absolute inset-x-0 top-0 h-[45%] bg-gradient-to-b from-white/35 via-white/10 to-transparent pointer-events-none rounded-t-[2.5rem]" />
+          
+          {/* Soft inner radial ambient lighting */}
+          <div className="absolute inset-0 bg-radial-gradient from-white/20 via-transparent to-transparent pointer-events-none" />
 
-          {/* Business identity / Interactive glass card heading */}
-          <div className="flex flex-col items-center text-center mb-5">
-            {/* Embedded Mini Glass Logo */}
+          {/* Logo & Identity */}
+          <div className="flex flex-col items-center text-center mb-6 relative z-10">
+            {/* Elegant Liquid Pressed Logo Window */}
             <motion.div 
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              className="relative w-20 h-20 mb-4 mt-1 flex items-center justify-center"
+              whileHover={{ scale: 1.04 }}
+              whileTap={{ scale: 0.96 }}
+              className="relative w-22 h-22 mb-4 mt-1 flex items-center justify-center cursor-pointer"
             >
-              <div className="absolute inset-0 bg-gradient-to-tr from-indigo-500 to-cyan-400 rounded-3xl blur-md opacity-35" />
-              <div className="relative w-full h-full bg-slate-950/80 border border-white/[0.12] rounded-3xl flex items-center justify-center p-2 shadow-lg">
+              {/* Glass Rim highlight */}
+              <div className="absolute inset-0 bg-gradient-to-tr from-white/50 via-white/80 to-white/30 rounded-[2rem] border border-white/90 shadow-[0_10px_25px_rgba(0,0,0,0.02),inset_0_1px_3px_rgba(255,255,255,0.91)]" />
+              
+              {/* Actual Content Container */}
+              <div className="relative w-[90%] h-[90%] bg-white/75 border border-white/80 rounded-[1.75rem] flex items-center justify-center p-2.5 shadow-md">
                 {logoUrl ? (
-                  <img src={logoUrl} alt="Logo" className="w-[85%] h-[85%] object-contain rounded-xl" />
+                  <img src={logoUrl} alt="Logo" referrerPolicy="no-referrer" className="w-[90%] h-[90%] object-contain rounded-2xl" />
                 ) : (
-                  <div className="text-white flex flex-col items-center leading-none">
-                    <span className="text-[8px] font-black uppercase tracking-[0.2em] mb-1.5 text-cyan-400">CYC POS</span>
-                    <span className="text-xl font-black tracking-tighter bg-gradient-to-tr from-white via-slate-100 to-indigo-200 bg-clip-text text-transparent">
+                  <div className="text-slate-800 flex flex-col items-center leading-none">
+                    <span className="text-[9px] font-black uppercase tracking-[0.25em] mb-1.5 text-indigo-600">CYC POS</span>
+                    <span className="text-2xl font-black tracking-tight bg-gradient-to-b from-slate-900 to-slate-700 bg-clip-text text-transparent">
                       {businessName ? businessName.substring(0, 3) : 'CYC'}
                     </span>
                   </div>
@@ -189,18 +208,18 @@ const Login: React.FC<LoginProps> = ({ onLogin, logoUrl, businessName }) => {
               </div>
             </motion.div>
 
-            <span className="text-[9px] font-bold uppercase tracking-[0.3em] text-cyan-400 mb-0.5">{getGreeting()}</span>
-            <h1 className="text-sm font-black text-white/90 tracking-widest uppercase mb-1">
+            <span className="text-[10px] font-bold uppercase tracking-[0.25em] text-indigo-600/80 mb-0.5 font-sans">{getGreeting()}</span>
+            <h1 className="text-base font-extrabold text-slate-800 tracking-wide uppercase">
               {businessName || 'SISTEMA ACCESO'}
             </h1>
           </div>
 
-          {/* Secure Dot Indicator display */}
-          <div className="mb-4">
+          {/* PIN Indicators Section */}
+          <div className="mb-6 relative z-10">
             <motion.div 
-              animate={error ? { x: [-5, 5, -5, 5, -2, 2, 0] } : {}}
+              animate={error ? { x: [-6, 6, -6, 6, -3, 3, 0] } : {}}
               transition={{ duration: 0.4 }}
-              className="flex gap-3 justify-center items-center h-8"
+              className="flex gap-3 justify-center items-center h-10"
             >
               {[...Array(6)].map((_, i) => {
                 const isActive = i === code.length;
@@ -209,94 +228,103 @@ const Login: React.FC<LoginProps> = ({ onLogin, logoUrl, businessName }) => {
                   <motion.div 
                     key={i} 
                     animate={{ 
-                      scale: isActive ? 1.2 : 1,
+                      scale: isActive ? 1.15 : 1,
                       backgroundColor: error 
-                        ? 'rgba(244, 63, 94, 0.9)' 
+                        ? 'rgba(225, 29, 72, 0.85)' 
                         : isFilled 
-                          ? 'rgba(99, 102, 241, 1)' 
-                          : 'rgba(255, 255, 255, 0.1)',
+                          ? 'rgba(79, 70, 229, 0.9)' 
+                          : 'rgba(255, 255, 255, 0.5)',
                       borderColor: isActive 
-                        ? 'rgba(6, 182, 212, 0.5)' 
+                        ? 'rgba(79, 70, 229, 0.7)' 
                         : isFilled
-                          ? 'rgba(99, 102, 241, 0.5)'
-                          : 'rgba(255, 255, 255, 0)'
+                          ? 'rgba(79, 70, 229, 0.3)'
+                          : 'rgba(0, 0, 0, 0.08)'
                     }}
-                    className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center transition-all ${
+                    className={`w-4 h-4 rounded-full border-[1.5px] flex items-center justify-center transition-all ${
                       isFilled 
                         ? (error 
-                            ? 'shadow-[0_0_12px_rgba(244,63,94,0.6)]' 
-                            : 'shadow-[0_0_12px_rgba(99,102,241,0.5)]') 
-                        : (isActive ? 'shadow-[0_0_8px_rgba(6,182,212,0.3)] bg-white/20' : '')
+                            ? 'shadow-[0_0_12px_rgba(225,29,72,0.4),inset_0_1px_1px_rgba(255,255,255,0.4)]' 
+                            : 'shadow-[0_4px_12px_rgba(79,70,229,0.35),inset_0_1px_2px_rgba(255,255,255,0.5)]') 
+                        : (isActive ? 'shadow-[0_2px_8px_rgba(79,70,229,0.18)]' : '')
                     }`}
                   >
                     {isFilled && !error && (
-                      <div className="w-1.5 h-1.5 rounded-full bg-white animate-scale-in" />
+                      <div className="w-1.5 h-1.5 rounded-full bg-white shadow-[0_1px_2px_rgba(0,0,0,0.15)]" />
                     )}
                   </motion.div>
                 );
               })}
             </motion.div>
 
-            {/* Micro notifications overlay */}
-            <div className="h-5 flex items-center justify-center overflow-hidden">
+            {/* Notification Text Box */}
+            <div className="h-6 flex items-center justify-center overflow-hidden">
               <AnimatePresence mode="wait">
                 {error ? (
                   <motion.div 
                     initial={{ opacity: 0, y: -4 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0 }}
-                    className="flex items-center justify-center gap-1 text-rose-400"
+                    className="flex items-center justify-center gap-1.5 text-rose-600 font-semibold"
                   >
-                    <AlertCircle className="w-3 h-3 flex-shrink-0" />
-                    <span className="text-[9px] font-bold uppercase tracking-widest">Código No Encontrado</span>
+                    <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" />
+                    <span className="text-[10px] uppercase tracking-widest font-black">NÚMERO INCORRECTO</span>
                   </motion.div>
                 ) : loading ? (
                   <motion.div 
                     initial={{ opacity: 0, y: 4 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0 }}
-                    className="flex items-center justify-center gap-1.5 text-cyan-400"
+                    className="flex items-center justify-center gap-2 text-indigo-600 font-semibold"
                   >
-                    <div className="w-2.5 h-2.5 border-2 border-cyan-400/30 border-t-cyan-400 rounded-full animate-spin" />
-                    <span className="text-[9px] font-bold uppercase tracking-widest">Iniciando Sesión...</span>
+                    <div className="w-3 h-3 border-2 border-indigo-600/20 border-t-indigo-600 rounded-full animate-spin" />
+                    <span className="text-[10px] uppercase tracking-wider font-extrabold text-indigo-600">INICIANDO...</span>
                   </motion.div>
                 ) : (
                   <motion.p 
                     initial={{ opacity: 0 }}
-                    animate={{ opacity: 0.4 }}
-                    className="text-center text-[9px] font-semibold text-slate-400 uppercase tracking-widest"
+                    animate={{ opacity: 0.6 }}
+                    className="text-center text-[10px] font-black text-slate-500 uppercase tracking-widest"
                   >
-                    {code.length === 0 ? 'Digitaliza PIN' : `${code.length} / 6 Dígitos`}
+                    {code.length === 0 ? 'INGRESA TU PIN' : `${code.length} / 6 DÍGITOS`}
                   </motion.p>
                 )}
               </AnimatePresence>
             </div>
           </div>
 
-          {/* Compact Tactile Circle Numpad */}
-          <div className="grid grid-cols-3 gap-3 w-full justify-items-center mb-4">
+          {/* Liquid Glass Numpad */}
+          <div className="grid grid-cols-3 gap-3.5 w-full justify-items-center mb-5 relative z-10">
             {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((num) => (
               <motion.button
                 key={num}
                 whileTap={{ scale: 0.88 }}
                 onClick={() => handlePress(num.toString())}
                 disabled={loading}
-                className="w-12 h-12 rounded-full bg-white/[0.03] hover:bg-white/[0.08] active:bg-indigo-600/20 border border-white/[0.04] hover:border-white/10 flex flex-col items-center justify-center transition-all shadow-md relative overflow-hidden group"
+                className="w-13 h-13 rounded-full bg-white/50 hover:bg-white/80 active:bg-white/90 border border-white/70 hover:border-white flex flex-col items-center justify-center transition-all shadow-[0_5px_15px_rgba(0,0,0,0.03),inset_0_1px_2px_rgba(255,255,255,0.9)] relative overflow-hidden group hover:shadow-[0_8px_20px_rgba(0,0,0,0.05),inset_0_1px_2px_rgba(255,255,255,0.9)]"
               >
-                {/* 2026 organic dynamic radial overlay on hover */}
-                <div className="absolute inset-0 bg-radial-gradient from-indigo-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
-                <span className="text-white text-base font-black tracking-tight group-hover:text-cyan-400 transition-colors">{num}</span>
+                <span className="text-slate-800 text-lg font-bold tracking-tight select-none">{num}</span>
               </motion.button>
             ))}
             
-            {/* Spacer for numpad alignment */}
-            <div className="w-12 h-12" />
+            {/* Quick Demo Assist Switch or Spacer */}
+            <motion.button
+              whileTap={{ scale: 0.88 }}
+              onClick={() => {
+                clearCode();
+                setCode('012004');
+              }}
+              disabled={loading}
+              title="PIN DEMO: 012004"
+              className="w-13 h-13 rounded-full bg-white/20 hover:bg-white/45 border border-white/40 flex items-center justify-center transition-all text-indigo-500/60 hover:text-indigo-600 shadow-[inset_0_1px_1px_rgba(255,255,255,0.4)]"
+            >
+              <Sparkles className="w-4 h-4" />
+            </motion.button>
             
             <motion.button
               whileTap={{ scale: 0.88 }}
               onClick={() => handlePress("0")}
               disabled={loading}
-              className="w-12 h-12 rounded-full bg-white/[0.03] hover:bg-white/[0.08] active:bg-indigo-600/20 border border-white/[0.04] hover:border-white/10 flex items-center justify-center transition-all text-white text-base font-black tracking-tight"
+              className="w-13 h-13 rounded-full bg-white/50 hover:bg-white/80 active:bg-white/90 border border-white/70 hover:border-white flex items-center justify-center transition-all shadow-[0_5px_15px_rgba(0,0,0,0.03),inset_0_1px_2px_rgba(255,255,255,0.9)] text-slate-800 text-lg font-bold tracking-tight"
             >
               0
             </motion.button>
@@ -305,7 +333,7 @@ const Login: React.FC<LoginProps> = ({ onLogin, logoUrl, businessName }) => {
               whileTap={{ scale: 0.88 }}
               onClick={handleBackspace}
               disabled={loading}
-              className="w-12 h-12 rounded-full bg-rose-500/[0.02] hover:bg-rose-500/[0.08] border border-rose-500/10 hover:border-rose-500/30 flex items-center justify-center transition-all text-rose-400 hover:text-rose-300"
+              className="w-13 h-13 rounded-full bg-rose-500/10 hover:bg-rose-500/20 active:bg-rose-500/30 border border-rose-300/30 flex items-center justify-center transition-all text-rose-600 shadow-[inset_0_1px_1px_rgba(255,255,255,0.6)]"
             >
               <Delete className="w-4 h-4" />
             </motion.button>
@@ -314,18 +342,18 @@ const Login: React.FC<LoginProps> = ({ onLogin, logoUrl, businessName }) => {
           {/* Quick Submit Access Switch */}
           {code.length >= 4 && code.length < 6 && (
             <motion.div 
-              initial={{ opacity: 0, y: 8 }}
+              initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              className="mt-1"
+              className="mt-1 relative z-10"
             >
               <motion.button
                 onClick={() => handleSubmit()}
                 disabled={loading}
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
-                className="w-full py-3 rounded-2xl bg-gradient-to-r from-indigo-600 to-cyan-500 hover:from-indigo-500 hover:to-cyan-400 text-white font-black text-[10px] tracking-[0.25em] uppercase shadow-lg shadow-indigo-950/55 flex items-center justify-center gap-2"
+                className="w-full py-3.5 rounded-2xl bg-indigo-600 hover:bg-indigo-500 text-white font-extrabold text-[11px] tracking-[0.2em] uppercase shadow-[0_8px_25px_rgba(79,70,229,0.3),inset_0_1.5px_2px_rgba(255,255,255,0.35)] flex items-center justify-center gap-2"
               >
-                <Check className="w-3.5 h-3.5" />
+                <Check className="w-4 h-4" />
                 <span>CONFIRMAR PIN</span>
               </motion.button>
             </motion.div>
@@ -333,21 +361,19 @@ const Login: React.FC<LoginProps> = ({ onLogin, logoUrl, businessName }) => {
 
         </div>
 
-
-
         {/* AES Shield Capsule Footer Details */}
         <motion.div 
           initial={{ opacity: 0 }}
-          animate={{ opacity: 0.3 }}
-          transition={{ delay: 0.6 }}
-          className="mt-4 flex flex-col items-center space-y-1 text-center text-slate-500"
+          animate={{ opacity: 0.55 }}
+          transition={{ delay: 0.5 }}
+          className="mt-5 flex flex-col items-center space-y-1 text-center text-slate-500"
         >
-          <div className="flex items-center gap-1 text-[8px] font-semibold uppercase tracking-[0.3em]">
-            <ShieldCheck className="w-3 h-3 text-cyan-400" />
+          <div className="flex items-center gap-1.5 text-[9px] font-bold uppercase tracking-[0.25em] text-slate-600">
+            <ShieldCheck className="w-3.5 h-3.5 text-indigo-600" />
             <span>Encriptado Extremo AES-256</span>
           </div>
-          <p className="text-[7px] font-mono text-slate-600 tracking-[0.15em] font-black">
-            POS BUILD v2026.12 • TERMINAL ACTIVA
+          <p className="text-[8px] font-semibold text-slate-500 tracking-[0.12em] uppercase">
+            SISTEMA CYC • TERMINAL ACTIVA 2026
           </p>
         </motion.div>
       </motion.div>

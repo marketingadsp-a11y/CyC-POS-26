@@ -40,6 +40,8 @@ const Settings: React.FC<{ user: User }> = ({ user }) => {
   const [bankAccountName, setBankAccountName] = useState<string>('');
   const [bankAccountNumber, setBankAccountNumber] = useState<string>('');
   const [zettleScheme, setZettleScheme] = useState<'zettle'|'izettle'>('zettle');
+  const [zettlePath, setZettlePath] = useState<'payment'|'payment-v1'|'payment-v2'>('payment-v2');
+  const [zettleAmountFormat, setZettleAmountFormat] = useState<'decimal'|'cents'|'integer'>('decimal');
   const [isUploadingLogo, setIsUploadingLogo] = useState(false);
   
   // Ticket Sequence Settings
@@ -95,6 +97,8 @@ const Settings: React.FC<{ user: User }> = ({ user }) => {
     setBankAccountName(s.bankAccountName || '');
     setBankAccountNumber(s.bankAccountNumber || '');
     setZettleScheme(s.zettleScheme || 'zettle');
+    setZettlePath(s.zettlePath || 'payment-v2');
+    setZettleAmountFormat(s.zettleAmountFormat || 'decimal');
     setAllProducts(p);
     setCoupons(c);
     setLoading(false);
@@ -155,7 +159,9 @@ const Settings: React.FC<{ user: User }> = ({ user }) => {
               bankName: bankName.toUpperCase(),
               bankAccountName: bankAccountName.toUpperCase(),
               bankAccountNumber: bankAccountNumber,
-              zettleScheme: zettleScheme
+              zettleScheme: zettleScheme,
+              zettlePath: zettlePath,
+              zettleAmountFormat: zettleAmountFormat
           });
           alert("Ajustes guardados. Si cambió el icono PWA, recargue la página.");
           loadData(); // Reload to ensure sync
@@ -586,47 +592,90 @@ const Settings: React.FC<{ user: User }> = ({ user }) => {
                      </div>
                 </div>
 
-                {/* Financials */}
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                {/* Financials & Zettle Integration */}
+                <div className="space-y-6">
                     <div>
-                        <Input 
-                            label="RECARGO POR ATRASO (MULTA)"
-                            type="number"
-                            placeholder="50.00"
-                            value={lateFee}
-                            onChange={(e) => setLateFee(e.target.value)}
-                        />
+                        <h3 className="text-xs font-bold text-slate-500 tracking-wider uppercase border-b border-slate-200 pb-2 mb-4">
+                            Configuración Financiera y de Comisión
+                        </h3>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            <div>
+                                <Input 
+                                    label="RECARGO POR ATRASO (MULTA)"
+                                    type="number"
+                                    placeholder="50.00"
+                                    value={lateFee}
+                                    onChange={(e) => setLateFee(e.target.value)}
+                                />
+                            </div>
+                            <div>
+                                <Input 
+                                    label="PRECIO POR DÍA EXTRA DE RENTA"
+                                    type="number"
+                                    placeholder="50.00"
+                                    value={extraDayPrice}
+                                    onChange={(e) => setExtraDayPrice(e.target.value)}
+                                />
+                            </div>
+                            <div>
+                                <Input 
+                                    label="COMISIÓN POR TARJETA (%)"
+                                    type="number"
+                                    placeholder="0"
+                                    value={cardFee}
+                                    onChange={(e) => setCardFee(e.target.value)}
+                                />
+                            </div>
+                        </div>
                     </div>
-                    <div>
-                        <Input 
-                            label="PRECIO POR DÍA EXTRA DE RENTA"
-                            type="number"
-                            placeholder="50.00"
-                            value={extraDayPrice}
-                            onChange={(e) => setExtraDayPrice(e.target.value)}
-                        />
-                    </div>
-                     <div>
-                        <Input 
-                            label="COMISIÓN POR TARJETA (%)"
-                            type="number"
-                            placeholder="0"
-                            value={cardFee}
-                            onChange={(e) => setCardFee(e.target.value)}
-                        />
-                    </div>
-                    <div>
-                        <Select
-                            label="MÉTODO DE ENLACE ZETTLE"
-                            value={zettleScheme}
-                            onChange={(e) => setZettleScheme(e.target.value as 'zettle' | 'izettle')}
-                        >
-                            <option value="zettle">Zettle (zettle://)</option>
-                            <option value="izettle">iZettle (izettle://)</option>
-                        </Select>
-                        <p className="text-[9px] text-slate-400 mt-1 uppercase leading-tight font-medium">
-                            * SI APARECE "DIRECCIÓN NO VÁLIDA" EN IOS, CAMBIE ESTE AJUSTE.
-                        </p>
+
+                    <div className="bg-indigo-50/30 border border-indigo-100 p-5 rounded-2xl">
+                        <h3 className="text-xs font-bold text-indigo-700 tracking-wider uppercase border-b border-indigo-100 pb-2 mb-4">
+                            Enlace Avanzado de Lector Zettle
+                        </h3>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            <div>
+                                <Select
+                                    label="MÉTODO DE ENLACE"
+                                    value={zettleScheme}
+                                    onChange={(e) => setZettleScheme(e.target.value as 'zettle' | 'izettle')}
+                                >
+                                    <option value="zettle">Zettle (zettle://)</option>
+                                    <option value="izettle">iZettle (izettle://)</option>
+                                </Select>
+                                <p className="text-[9px] text-slate-400 mt-1.5 uppercase leading-normal font-semibold">
+                                    * Si Safari/iOS dice "Dirección no válida", cambie esto.
+                                </p>
+                            </div>
+                            <div>
+                                <Select
+                                    label="RUTA ACCIÓN DE PAGO"
+                                    value={zettlePath}
+                                    onChange={(e) => setZettlePath(e.target.value as 'payment' | 'payment-v1' | 'payment-v2')}
+                                >
+                                    <option value="payment-v2">payment-v2 (Estándar)</option>
+                                    <option value="payment-v1">payment-v1 (Zettle Clásico)</option>
+                                    <option value="payment">payment (Básico/Simple)</option>
+                                </Select>
+                                <p className="text-[9px] text-slate-400 mt-1.5 uppercase leading-normal font-semibold">
+                                    * Alterne si la app abre pero no procesa la compra.
+                                </p>
+                            </div>
+                            <div>
+                                <Select
+                                    label="FORMATO DEL MONTO"
+                                    value={zettleAmountFormat}
+                                    onChange={(e) => setZettleAmountFormat(e.target.value as 'decimal' | 'cents' | 'integer')}
+                                >
+                                    <option value="decimal">Decimal ($10.50)</option>
+                                    <option value="cents">Multiplicar por 100 ($1050 céntimos)</option>
+                                    <option value="integer">Enteros sin decimal ($10)</option>
+                                </Select>
+                                <p className="text-[9px] text-slate-400 mt-1.5 uppercase leading-normal font-semibold text-rose-600">
+                                    * Si la app abre en ceros, use "Multiplicar por 100 (Céntimos)".
+                                </p>
+                            </div>
+                        </div>
                     </div>
                 </div>
 

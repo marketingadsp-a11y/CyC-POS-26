@@ -628,7 +628,9 @@ export const getSystemSettings = async (): Promise<SystemSettings> => {
           bankName: data.bankName || '',
           bankAccountName: data.bankAccountName || '',
           bankAccountNumber: data.bankAccountNumber || '',
-          zettleScheme: data.zettleScheme || 'zettle'
+          zettleScheme: data.zettleScheme || 'zettle',
+          zettlePath: data.zettlePath || 'payment-v2',
+          zettleAmountFormat: data.zettleAmountFormat || 'decimal'
       } as SystemSettings;
     } else {
       // Return default
@@ -647,7 +649,9 @@ export const getSystemSettings = async (): Promise<SystemSettings> => {
           bankName: '',
           bankAccountName: '',
           bankAccountNumber: '',
-          zettleScheme: 'zettle'
+          zettleScheme: 'zettle',
+          zettlePath: 'payment-v2',
+          zettleAmountFormat: 'decimal'
       };
     }
   } catch (e) {
@@ -667,7 +671,9 @@ export const getSystemSettings = async (): Promise<SystemSettings> => {
         bankName: '',
         bankAccountName: '',
         bankAccountNumber: '',
-        zettleScheme: 'zettle'
+        zettleScheme: 'zettle',
+        zettlePath: 'payment-v2',
+        zettleAmountFormat: 'decimal'
     };
   }
 }

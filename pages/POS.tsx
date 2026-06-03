@@ -615,16 +615,27 @@ const POS: React.FC<POSProps> = ({ onOpenQuickAdd }) => {
         
         localStorage.setItem('zettle_pending_sale', JSON.stringify(pendingSale));
 
-        // Formulate callback URLs which return here
+        // Formulate callback URLs which return here (keep standard decimal here for seamless callback parsing)
         const callbackUrl = window.location.origin + window.location.pathname;
         const successUrl = `${callbackUrl}?zettle=success&ref=${ref}&amount=${total.toFixed(2)}`;
         const errorUrl = `${callbackUrl}?zettle=error&ref=${ref}`;
         const cancelUrl = `${callbackUrl}?zettle=cancel&ref=${ref}`;
 
-        // Zettle custom URL scheme parameters (uses dynamic custom scheme based on settings: 'zettle://' or 'izettle://')
+        // Dynamic Zettle path configurations from Settings
         const scheme = settings?.zettleScheme || 'zettle';
-        const zettleUrl = `${scheme}://x-callback-url/payment-v2?` + 
-            `amount=${encodeURIComponent(total.toFixed(2))}&` +
+        const zettleAction = settings?.zettlePath || 'payment-v2';
+        const format = settings?.zettleAmountFormat || 'decimal';
+
+        let amountStr = total.toFixed(2);
+        if (format === 'cents') {
+            amountStr = Math.round(total * 100).toString();
+        } else if (format === 'integer') {
+            amountStr = Math.round(total).toString();
+        }
+
+        // Zettle custom URL scheme parameters
+        const zettleUrl = `${scheme}://x-callback-url/${zettleAction}?` + 
+            `amount=${encodeURIComponent(amountStr)}&` +
             `currency=MXN&` +
             `reference=${encodeURIComponent(ref)}&` +
             `x-source=${encodeURIComponent('CyC POS')}&` +
