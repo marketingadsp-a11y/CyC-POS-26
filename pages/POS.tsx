@@ -87,6 +87,10 @@ const POS: React.FC<POSProps> = ({ onOpenQuickAdd }) => {
     // Discount
     const [appliedDiscount, setAppliedDiscount] = useState<{amount: number, reason: string} | null>(null);
 
+    // Zettle Integration State
+    const [zettleSuccessData, setZettleSuccessData] = useState<{ amount: number; reference: string; customerName?: string; orderId?: string } | null>(null);
+    const [showZettleSuccess, setShowZettleSuccess] = useState(false);
+
     // Load Data
     useEffect(() => {
         const init = async () => {
@@ -107,6 +111,106 @@ const POS: React.FC<POSProps> = ({ onOpenQuickAdd }) => {
         };
         init();
     }, []);
+
+    // Check for incoming Zettle Callback Status
+    useEffect(() => {
+        const handleZettleCallback = async () => {
+            const query = new URLSearchParams(location.search);
+            const zettleStatus = query.get('zettle');
+            if (!zettleStatus) return;
+
+            const ref = query.get('ref') || '';
+            const amountVal = parseFloat(query.get('amount') || '0');
+
+            if (zettleStatus === 'success') {
+                try {
+                    const pendingStr = localStorage.getItem('zettle_pending_sale');
+                    if (pendingStr) {
+                        const pending = JSON.parse(pendingStr);
+                        if (pending && pending.cart) {
+                            const orderData: any = {
+                                items: pending.cart,
+                                customer: pending.currentCustomer || undefined,
+                                total: parseFloat(pending.total) || amountVal || 0,
+                                status: pending.isApartadoMode ? 'reservation' : (pending.hasRentals ? 'pending' : 'completed'),
+                                createdAt: Date.now(),
+                                paymentMethod: 'card', 
+                                discount: pending.appliedDiscount?.amount,
+                                discountReason: pending.appliedDiscount?.reason,
+                                notes: `Pago exitoso Lector Zettle Ref: ${ref}`
+                            };
+
+                            if (pending.isApartadoMode) {
+                                orderData.status = 'reservation';
+                                orderData.downPayment = parseFloat(pending.amountPaid) || amountVal;
+                                orderData.remainingBalance = orderData.total - orderData.downPayment;
+                                orderData.rentalStartDate = pending.rentalStartDate;
+                                orderData.rentalEndDate = pending.rentalEndDate;
+                            } else if (pending.hasRentals) {
+                                orderData.status = 'pending';
+                                orderData.rentalStartDate = pending.rentalStartDate || Date.now();
+                                orderData.rentalEndDate = pending.rentalEndDate;
+                            } else {
+                                orderData.status = 'completed';
+                            }
+
+                            const newOrder = await createOrder(orderData);
+                            setLastOrder(null); // Keep lastOrder null so standard success modal doesn't open
+                            
+                            setZettleSuccessData({
+                                amount: amountVal || orderData.total,
+                                reference: ref,
+                                customerName: pending.currentCustomer?.name,
+                                orderId: newOrder.id
+                            });
+                            setShowZettleSuccess(true);
+
+                            // Clear active POS states after transaction completes
+                            setCart([]);
+                            setCurrentCustomer(null);
+                            setAppliedDiscount(null);
+                            setIsApartadoMode(false);
+                            setRentalEndDate(undefined);
+                            setRentalStartDate(undefined);
+                            setAmountPaid('');
+                        }
+                    }
+                } catch (err) {
+                    console.error("Error creating order on Zettle success callback:", err);
+                    alert("Ocurrió un error al procesar la venta devuelta por Zettle.");
+                } finally {
+                    localStorage.removeItem('zettle_pending_sale');
+                    navigate(location.pathname, { replace: true });
+                }
+            } else if (zettleStatus === 'cancel' || zettleStatus === 'error') {
+                try {
+                    const pendingStr = localStorage.getItem('zettle_pending_sale');
+                    if (pendingStr) {
+                        const pending = JSON.parse(pendingStr);
+                        if (pending) {
+                            setCart(pending.cart || []);
+                            setCurrentCustomer(pending.currentCustomer || null);
+                            setIsApartadoMode(pending.isApartadoMode || false);
+                            setRentalStartDate(pending.rentalStartDate || undefined);
+                            setRentalEndDate(pending.rentalEndDate || undefined);
+                            setAppliedDiscount(pending.appliedDiscount || null);
+                            setAmountPaid(pending.amountPaid || '');
+                            setPaymentMethod('card');
+                            setPaymentModalOpen(true);
+                        }
+                    }
+                    alert(zettleStatus === 'cancel' ? "El cobro con lector Zettle fue cancelado por el usuario." : "El cobro con lector Zettle falló. Por favor intente de nuevo.");
+                } catch (err) {
+                    console.error("Error restoring state on Zettle cancel/error:", err);
+                } finally {
+                    localStorage.removeItem('zettle_pending_sale');
+                    navigate(location.pathname, { replace: true });
+                }
+            }
+        };
+
+        handleZettleCallback();
+    }, [location.search]);
 
     // Check for incoming state (Late Fee Payment)
     useEffect(() => {
@@ -485,6 +589,55 @@ const POS: React.FC<POSProps> = ({ onOpenQuickAdd }) => {
         setPaymentModalOpen(false);
         // Remove fee when closing modal to prevent it sticking in cart if they continue shopping
         setCart(prev => prev.filter(i => i.cartId !== 'CARD_FEE_SERVICE'));
+    };
+
+    const handleZettleCheckout = () => {
+        if (total <= 0) {
+            alert("El monto de cobro debe ser mayor a 0.");
+            return;
+        }
+
+        const ref = 'CYC-' + Date.now();
+        
+        // Save current purchase state so we can restore on return
+        const pendingSale = {
+            cart,
+            currentCustomer,
+            isApartadoMode,
+            rentalStartDate,
+            rentalEndDate,
+            appliedDiscount,
+            amountPaid: amountPaid || total.toFixed(2),
+            total: total.toFixed(2),
+            hasRentals,
+            timestamp: Date.now()
+        };
+        
+        localStorage.setItem('zettle_pending_sale', JSON.stringify(pendingSale));
+
+        // Formulate callback URLs which return here
+        const callbackUrl = window.location.origin + window.location.pathname;
+        const successUrl = `${callbackUrl}?zettle=success&ref=${ref}&amount=${total.toFixed(2)}`;
+        const errorUrl = `${callbackUrl}?zettle=error&ref=${ref}`;
+        const cancelUrl = `${callbackUrl}?zettle=cancel&ref=${ref}`;
+
+        // Zettle payment-v2 custom URL scheme parameters
+        const zettleUrl = `zettle://x-callback-url/payment-v2?` + 
+            `amount=${encodeURIComponent(total.toFixed(2))}&` +
+            `currency=MXN&` +
+            `reference=${encodeURIComponent(ref)}&` +
+            `x-source=${encodeURIComponent('CyC POS')}&` +
+            `x-success=${encodeURIComponent(successUrl)}&` +
+            `x-error=${encodeURIComponent(errorUrl)}&` +
+            `x-cancel=${encodeURIComponent(cancelUrl)}`;
+
+        // Close payment modal first so it resets nicely
+        setPaymentModalOpen(false);
+
+        console.log("Redirecting to Zettle reader app:", zettleUrl);
+        
+        // Redirect directly to the Zettle on-device integration App
+        window.location.href = zettleUrl;
     };
   
     const handleCheckout = async () => {
@@ -1446,6 +1599,82 @@ const POS: React.FC<POSProps> = ({ onOpenQuickAdd }) => {
                                     </div>
                                 )}
                             </div>
+                        ) : paymentMethod === 'card' ? (
+                            /* CARD MODE: ZETTLE AND MANUAL SELECTION */
+                            <div className="relative z-10 flex flex-col h-full justify-between min-h-[350px]">
+                                <div className="space-y-6">
+                                    <div className="text-center">
+                                        <span className="text-[10px] font-black text-indigo-400 uppercase tracking-widest block mb-1">COBRO CON TARJETA</span>
+                                        <span className="text-sm font-black text-slate-400 uppercase tracking-wide block">INTEGRACIÓN CON LECTOR</span>
+                                    </div>
+
+                                    {/* Styled mini reader wireframe/illustration */}
+                                    <div className="bg-slate-800/40 border border-slate-700/40 rounded-3xl p-5 flex flex-col items-center justify-center space-y-4 relative overflow-hidden group">
+                                        <div className="absolute inset-0 bg-blue-500/5 opacity-5 animate-pulse pointer-events-none" />
+                                        
+                                        <div className="w-14 h-22 bg-slate-950 border border-slate-700 rounded-2xl flex flex-col p-2 justify-between shadow-xl relative">
+                                            {/* Screen */}
+                                            <div className="w-full h-8 bg-blue-500/15 border border-blue-500/30 rounded-lg flex flex-col items-center justify-center p-1">
+                                                <div className="w-8 h-1 bg-blue-400 rounded-full animate-pulse" />
+                                                <span className="text-[6px] font-mono font-black text-blue-400 mt-1">${total.toFixed(2)}</span>
+                                            </div>
+                                            {/* Keypad mock */}
+                                            <div className="grid grid-cols-3 gap-1 mt-2">
+                                                {[1,2,3,4,5,6,7,8,9].map(n => (
+                                                    <div key={n} className="w-full h-1 bg-slate-800 rounded-[1px]" />
+                                                ))}
+                                            </div>
+                                            {/* Zettle slot */}
+                                            <div className="w-full h-1.5 bg-emerald-500/30 rounded flex items-center justify-center mt-1">
+                                                <div className="w-3 h-0.5 bg-emerald-400 rounded-full" />
+                                            </div>
+                                        </div>
+
+                                        <div className="text-center space-y-1">
+                                            <span className="text-xs font-black text-white uppercase tracking-wider block">LECTOR FÍSICO ZETTLE</span>
+                                            <span className="text-[10px] text-slate-400 uppercase tracking-wide block">Envía el monto directamente al PINPAD</span>
+                                        </div>
+                                    </div>
+                                    
+                                    <Button
+                                        onClick={handleZettleCheckout}
+                                        className="w-full bg-blue-600 hover:bg-blue-500 text-white py-5 rounded-2xl uppercase font-black tracking-widest text-xs flex items-center justify-center gap-3 shadow-xl shadow-blue-500/20 active:scale-95 transition-all"
+                                    >
+                                        <Smartphone className="w-5 h-5 text-blue-100" />
+                                        INICIAR COBRO EN ZETTLE
+                                    </Button>
+
+                                    <div className="p-4 bg-white/5 border border-white/5 rounded-2xl flex flex-col items-center">
+                                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 font-sans">MONTO EN RECEPTOR ZETTLE:</span>
+                                        <span className="text-2xl font-black text-white font-mono tracking-tighter">${total.toFixed(2)}</span>
+                                    </div>
+                                </div>
+
+                                <div className="space-y-3 pt-4 border-t border-slate-800/80">
+                                    <span className="text-[9px] text-slate-400 font-black uppercase text-center tracking-widest block leading-tight">¿Ya cobraste o usas otra terminal manual?</span>
+                                    <div className="flex gap-2">
+                                        <Button 
+                                            variant="secondary"
+                                            onClick={() => {
+                                                setAmountPaid(total.toFixed(2));
+                                                setTimeout(() => {
+                                                    handleCheckout();
+                                                }, 100);
+                                            }}
+                                            className="flex-1 py-3 bg-white/5 border border-white/10 hover:bg-white/10 text-white rounded-xl uppercase font-black text-[10px]"
+                                        >
+                                            COBRO MANUAL
+                                        </Button>
+                                        <Button 
+                                            variant="secondary" 
+                                            onClick={() => handleClosePayment()} 
+                                            className="flex-1 py-3 bg-rose-500/20 hover:bg-rose-500/25 border border-rose-500/15 text-rose-400 uppercase text-[10px] font-black"
+                                        >
+                                            CANCELAR
+                                        </Button>
+                                    </div>
+                                </div>
+                            </div>
                         ) : (
                             /* NORMAL MODE: KEYPAD */
                             <>
@@ -1484,29 +1713,31 @@ const POS: React.FC<POSProps> = ({ onOpenQuickAdd }) => {
                             </>
                         )}
 
-                        <div className="mt-auto space-y-4 relative z-10">
-                            {!isApartadoMode && paymentMethod === 'cash' && amountPaid && parseFloat(amountPaid) >= total && (
-                                <div className="p-4 bg-emerald-500/10 border border-emerald-500/20 rounded-2xl flex justify-between items-center">
-                                    <span className="text-xs font-black text-emerald-400 uppercase tracking-widest">CAMBIO PARA CLIENTE:</span>
-                                    <span className="text-2xl font-black text-emerald-400 font-mono tracking-tighter">${(parseFloat(amountPaid) - total).toFixed(2)}</span>
-                                </div>
-                            )}
+                        {paymentMethod !== 'card' && (
+                            <div className="mt-auto space-y-4 relative z-10">
+                                {!isApartadoMode && paymentMethod === 'cash' && amountPaid && parseFloat(amountPaid) >= total && (
+                                    <div className="p-4 bg-emerald-500/10 border border-emerald-500/20 rounded-2xl flex justify-between items-center">
+                                        <span className="text-xs font-black text-emerald-400 uppercase tracking-widest">CAMBIO PARA CLIENTE:</span>
+                                        <span className="text-2xl font-black text-emerald-400 font-mono tracking-tighter">${(parseFloat(amountPaid) - total).toFixed(2)}</span>
+                                    </div>
+                                )}
 
-                            <div className="flex gap-2">
-                                <Button variant="secondary" onClick={() => handleClosePayment()} className="flex-1 py-4 bg-white/5 border-white/10 text-white uppercase text-xs font-black">CANCELAR</Button>
-                                <Button 
-                                    className={`flex-[2] py-4 uppercase font-black text-xs shadow-xl ${
-                                        (!amountPaid || parseFloat(amountPaid) <= 0 || (!isApartadoMode && parseFloat(amountPaid) < total))
-                                        ? 'bg-slate-800 text-slate-500 cursor-not-allowed opacity-50'
-                                        : 'bg-emerald-600 hover:bg-emerald-500 text-white'
-                                    }`}
-                                    onClick={handleCheckout}
-                                    disabled={!amountPaid || parseFloat(amountPaid) <= 0 || (!isApartadoMode && parseFloat(amountPaid) < total)}
-                                >
-                                    {isApartadoMode ? 'EMITIR APARTADO' : (paymentMethod === 'card' ? 'COBRO MANUAL' : 'COBRAR VENTA')}
-                                </Button>
+                                <div className="flex gap-2">
+                                    <Button variant="secondary" onClick={() => handleClosePayment()} className="flex-1 py-4 bg-white/5 border-white/10 text-white uppercase text-xs font-black">CANCELAR</Button>
+                                    <Button 
+                                        className={`flex-[2] py-4 uppercase font-black text-xs shadow-xl ${
+                                            (!amountPaid || parseFloat(amountPaid) <= 0 || (!isApartadoMode && parseFloat(amountPaid) < total))
+                                            ? 'bg-slate-800 text-slate-500 cursor-not-allowed opacity-50'
+                                            : 'bg-emerald-600 hover:bg-emerald-500 text-white'
+                                        }`}
+                                        onClick={handleCheckout}
+                                        disabled={!amountPaid || parseFloat(amountPaid) <= 0 || (!isApartadoMode && parseFloat(amountPaid) < total)}
+                                    >
+                                        {isApartadoMode ? 'EMITIR APARTADO' : 'COBRAR VENTA'}
+                                    </Button>
+                                </div>
                             </div>
-                        </div>
+                        )}
                     </div>
                  </div>
             </Modal>
@@ -1585,6 +1816,88 @@ const POS: React.FC<POSProps> = ({ onOpenQuickAdd }) => {
                             className="py-5 px-16 bg-slate-900 text-white rounded-full uppercase font-black tracking-widest text-xl shadow-2xl hover:scale-105 active:scale-95 transition-all w-full md:w-auto"
                         >
                             CERRAR VISTA
+                        </Button>
+                    </div>
+                </div>
+            </Modal>
+
+            {/* --- ZETTLE SUCCESS MODAL --- */}
+            <Modal isOpen={showZettleSuccess} onClose={() => { setShowZettleSuccess(false); setZettleSuccessData(null); }} title="COBRO ZETTLE COMPLETADO" hideHeader>
+                <div className="text-center space-y-6 py-4">
+                    {/* Glowing outer circle with pulsating wave */}
+                    <div className="flex flex-col items-center">
+                        <div className="relative mb-6">
+                            {/* Ambient glowing outer ring */}
+                            <div className="absolute inset-0 w-24 h-24 bg-emerald-500/10 rounded-full blur-xl scale-125 animate-pulse" />
+                            <div className="relative w-24 h-24 bg-gradient-to-tr from-emerald-400 to-emerald-600 rounded-full flex items-center justify-center text-white shadow-xl shadow-emerald-500/20 transform scale-100 animate-in zoom-in duration-500">
+                                <CheckCircle className="w-12 h-12 stroke-[2.5]" />
+                            </div>
+                        </div>
+
+                        <span className="block text-[10px] font-black tracking-[0.4em] text-emerald-500 uppercase mb-2">TRANSACCIÓN APROBADA</span>
+                        <h2 className="text-3xl font-black text-slate-800 uppercase tracking-tight">¡Cobro Exitoso!</h2>
+                        
+                        <div className="mt-4 text-slate-500 font-mono text-[10px] uppercase font-black bg-slate-100 px-4 py-1.5 rounded-full border border-slate-200">
+                            ID: {zettleSuccessData?.orderId?.slice(-6) || 'N/A'}
+                        </div>
+                    </div>
+
+                    {/* Highly polished receipt/payment confirmation card */}
+                    <div className="bg-slate-50 border border-slate-100 p-6 rounded-3xl text-left space-y-4 shadow-inner relative overflow-hidden">
+                        <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/5 rounded-full blur-2xl pointer-events-none" />
+                        
+                        <div className="flex justify-between items-center pb-3 border-b border-slate-200/60">
+                            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">MONTO PROCESADO</span>
+                            <span className="text-3xl font-black text-slate-800 font-mono tracking-tighter">${zettleSuccessData?.amount.toFixed(2)}</span>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-4 text-xs font-medium">
+                            <div>
+                                <span className="block text-[9px] font-black text-slate-400 uppercase tracking-wider mb-0.5">MÉTODO DE PAGO</span>
+                                <span className="block text-slate-700 font-bold uppercase">TARJETA (Lector Zettle)</span>
+                            </div>
+                            <div>
+                                <span className="block text-[9px] font-black text-slate-400 uppercase tracking-wider mb-0.5">MONEDA</span>
+                                <span className="block text-slate-700 font-bold uppercase">MXN</span>
+                            </div>
+                            <div>
+                                <span className="block text-[9px] font-black text-slate-400 uppercase tracking-wider mb-0.5">TICKET/VENTA</span>
+                                <span className="block text-slate-700 font-bold uppercase">#{zettleSuccessData?.orderId?.slice(-8) || 'N/A'}</span>
+                            </div>
+                            <div>
+                                <span className="block text-[9px] font-black text-slate-400 uppercase tracking-wider mb-0.5">CLIENTE</span>
+                                <span className="block text-indigo-600 font-bold uppercase truncate">{zettleSuccessData?.customerName || 'PÚBLICO EN GENERAL'}</span>
+                            </div>
+                        </div>
+
+                        <div className="pt-3 border-t border-slate-200/60 flex justify-between items-center text-[10px] font-mono text-slate-400">
+                            <span>REF DE TRANSACCIÓN:</span>
+                            <span className="font-bold text-slate-600 tracking-wider font-mono select-all">{zettleSuccessData?.reference}</span>
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 gap-3 pt-3">
+                        <Button 
+                            onClick={() => {
+                                if (zettleSuccessData?.orderId) {
+                                    handlePrintReceipt();
+                                }
+                            }} 
+                            className="uppercase py-4 bg-slate-900 hover:bg-slate-800 shadow-xl"
+                        >
+                            <Printer className="w-5 h-5 mr-2" /> IMPRIMIR RECIBO/TICKET
+                        </Button>
+                        
+                        <Button 
+                            onClick={() => {
+                                setShowZettleSuccess(false);
+                                setZettleSuccessData(null);
+                                handleNewSale();
+                            }} 
+                            variant="secondary" 
+                            className="uppercase py-4 border-indigo-200 text-indigo-700 hover:bg-indigo-50"
+                        >
+                            <RefreshCw className="w-5 h-5 mr-2" /> NUEVA VENTA
                         </Button>
                     </div>
                 </div>
