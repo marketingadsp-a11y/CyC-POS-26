@@ -621,8 +621,8 @@ const POS: React.FC<POSProps> = ({ onOpenQuickAdd }) => {
         const errorUrl = `${callbackUrl}?zettle=error&ref=${ref}`;
         const cancelUrl = `${callbackUrl}?zettle=cancel&ref=${ref}`;
 
-        // Zettle payment-v2 custom URL scheme parameters
-        const zettleUrl = `zettle://x-callback-url/payment-v2?` + 
+        // Zettle payment-v2 custom URL scheme parameters (using official 'izettle://' custom scheme registered by the Zettle Go app for automated checkouts)
+        const zettleUrl = `izettle://x-callback-url/payment-v2?` + 
             `amount=${encodeURIComponent(total.toFixed(2))}&` +
             `currency=MXN&` +
             `reference=${encodeURIComponent(ref)}&` +
