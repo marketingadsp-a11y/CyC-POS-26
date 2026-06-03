@@ -627,7 +627,8 @@ export const getSystemSettings = async (): Promise<SystemSettings> => {
           imgbbKey: data.imgbbKey || '',
           bankName: data.bankName || '',
           bankAccountName: data.bankAccountName || '',
-          bankAccountNumber: data.bankAccountNumber || ''
+          bankAccountNumber: data.bankAccountNumber || '',
+          zettleScheme: data.zettleScheme || 'zettle'
       } as SystemSettings;
     } else {
       // Return default
@@ -645,7 +646,8 @@ export const getSystemSettings = async (): Promise<SystemSettings> => {
           imgbbKey: '',
           bankName: '',
           bankAccountName: '',
-          bankAccountNumber: ''
+          bankAccountNumber: '',
+          zettleScheme: 'zettle'
       };
     }
   } catch (e) {
@@ -664,7 +666,8 @@ export const getSystemSettings = async (): Promise<SystemSettings> => {
         imgbbKey: '',
         bankName: '',
         bankAccountName: '',
-        bankAccountNumber: ''
+        bankAccountNumber: '',
+        zettleScheme: 'zettle'
     };
   }
 }

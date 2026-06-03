@@ -39,6 +39,7 @@ const Settings: React.FC<{ user: User }> = ({ user }) => {
   const [bankName, setBankName] = useState<string>('');
   const [bankAccountName, setBankAccountName] = useState<string>('');
   const [bankAccountNumber, setBankAccountNumber] = useState<string>('');
+  const [zettleScheme, setZettleScheme] = useState<'zettle'|'izettle'>('zettle');
   const [isUploadingLogo, setIsUploadingLogo] = useState(false);
   
   // Ticket Sequence Settings
@@ -93,6 +94,7 @@ const Settings: React.FC<{ user: User }> = ({ user }) => {
     setBankName(s.bankName || '');
     setBankAccountName(s.bankAccountName || '');
     setBankAccountNumber(s.bankAccountNumber || '');
+    setZettleScheme(s.zettleScheme || 'zettle');
     setAllProducts(p);
     setCoupons(c);
     setLoading(false);
@@ -152,7 +154,8 @@ const Settings: React.FC<{ user: User }> = ({ user }) => {
               imgbbKey: imgbbKey,
               bankName: bankName.toUpperCase(),
               bankAccountName: bankAccountName.toUpperCase(),
-              bankAccountNumber: bankAccountNumber
+              bankAccountNumber: bankAccountNumber,
+              zettleScheme: zettleScheme
           });
           alert("Ajustes guardados. Si cambió el icono PWA, recargue la página.");
           loadData(); // Reload to ensure sync
@@ -584,7 +587,7 @@ const Settings: React.FC<{ user: User }> = ({ user }) => {
                 </div>
 
                 {/* Financials */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
                     <div>
                         <Input 
                             label="RECARGO POR ATRASO (MULTA)"
@@ -611,6 +614,19 @@ const Settings: React.FC<{ user: User }> = ({ user }) => {
                             value={cardFee}
                             onChange={(e) => setCardFee(e.target.value)}
                         />
+                    </div>
+                    <div>
+                        <Select
+                            label="MÉTODO DE ENLACE ZETTLE"
+                            value={zettleScheme}
+                            onChange={(e) => setZettleScheme(e.target.value as 'zettle' | 'izettle')}
+                        >
+                            <option value="zettle">Zettle (zettle://)</option>
+                            <option value="izettle">iZettle (izettle://)</option>
+                        </Select>
+                        <p className="text-[9px] text-slate-400 mt-1 uppercase leading-tight font-medium">
+                            * SI APARECE "DIRECCIÓN NO VÁLIDA" EN IOS, CAMBIE ESTE AJUSTE.
+                        </p>
                     </div>
                 </div>
 

@@ -73,6 +73,7 @@ export interface SystemSettings {
   bankName?: string; // New: Bank name for transfers
   bankAccountName?: string; // New: Account holder name for transfers
   bankAccountNumber?: string; // New: Account number for transfers
+  zettleScheme?: 'zettle' | 'izettle'; // Custom scheme for Zettle App Integration
 }
 
 export interface Expense {
