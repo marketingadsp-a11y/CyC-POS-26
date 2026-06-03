@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Delete, ShieldCheck, AlertCircle, Check, Sparkles } from 'lucide-react';
+import { Delete, ShieldCheck, AlertCircle, Check, Sparkles, Clock, Lock } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { User } from '../types';
 import { getUserByCode, updateUser } from '../services/dataService';
@@ -16,7 +16,7 @@ const Login: React.FC<LoginProps> = ({ onLogin, logoUrl, businessName }) => {
   const [loading, setLoading] = useState(false);
   const [time, setTime] = useState(new Date());
 
-  // Real-time updates for high-end feel
+  // Real-time clock update
   useEffect(() => {
     const timer = setInterval(() => setTime(new Date()), 1000);
     return () => clearInterval(timer);
@@ -31,6 +31,16 @@ const Login: React.FC<LoginProps> = ({ onLogin, logoUrl, businessName }) => {
 
   const formatClockTime = () => {
     return time.toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit', hour12: true });
+  };
+
+  const formatFullDate = () => {
+    const options: Intl.DateTimeFormatOptions = { 
+      weekday: 'long', 
+      year: 'numeric', 
+      month: 'long', 
+      day: 'numeric' 
+    };
+    return time.toLocaleDateString('es-MX', options);
   };
 
   const handlePress = (num: string) => {
@@ -55,7 +65,7 @@ const Login: React.FC<LoginProps> = ({ onLogin, logoUrl, businessName }) => {
     if (activeCode.length < 4) return;
     setLoading(true);
     
-    // Aesthetic feedback transition
+    // Smooth transition delay to feel premium
     await new Promise(r => setTimeout(r, 600));
 
     // 1. Super Admin checking
@@ -79,7 +89,7 @@ const Login: React.FC<LoginProps> = ({ onLogin, logoUrl, businessName }) => {
       return;
     }
 
-    // 2. Fetch from DB
+    // 2. Fetch from database
     try {
         const foundUser = await getUserByCode(activeCode);
         if (foundUser && foundUser.id) {
@@ -107,275 +117,285 @@ const Login: React.FC<LoginProps> = ({ onLogin, logoUrl, businessName }) => {
   }, [code]);
 
   return (
-    <div className="min-h-screen bg-slate-50/90 flex flex-col items-center justify-center p-4 relative overflow-hidden font-sans select-none">
+    <div className="min-h-screen bg-slate-100 flex flex-col items-center justify-center p-4 sm:p-6 md:p-12 relative overflow-hidden font-sans select-none bg-gradient-to-tr from-slate-50 via-slate-100 to-indigo-50/40">
       
-      {/* Dynamic Pastel Fluid Background (Apple Liquid Style) */}
-      <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden bg-gradient-to-tr from-[#f3e8ff]/70 via-[#e0f2fe]/60 to-[#ffedd5]/50">
-        
-        {/* Soft Violet/Lavender Liquid Orb */}
+      {/* Background aesthetic touches */}
+      <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
         <motion.div 
           animate={{ 
-            scale: [1, 1.25, 0.9, 1.15, 1],
-            x: [-40, 60, -30, 40, -40],
-            y: [-30, 40, -50, 20, -30],
-            opacity: [0.4, 0.6, 0.5, 0.65, 0.4]
+            scale: [1, 1.15, 0.95, 1.05, 1],
+            x: [-30, 40, -20, 30, -30],
+            y: [-20, 30, -40, 15, -20],
+            opacity: [0.3, 0.45, 0.35, 0.5, 0.3]
           }}
-          transition={{ duration: 25, repeat: Infinity, ease: "easeInOut" }}
-          className="absolute top-1/4 left-1/4 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[700px] bg-gradient-to-tr from-violet-300 via-indigo-200 to-transparent rounded-full blur-[110px]"
+          transition={{ duration: 24, repeat: Infinity, ease: "easeInOut" }}
+          className="absolute top-[-10%] left-[-10%] w-[600px] h-[600px] bg-gradient-to-br from-indigo-200/50 via-violet-100/40 to-transparent rounded-full blur-[100px]"
         />
-        
-        {/* Peach / Sunrise Orb */}
         <motion.div 
           animate={{ 
-            scale: [1, 1.15, 1.3, 0.95, 1],
-            x: [50, -40, 60, -20, 50],
-            y: [30, -50, 40, -30, 30],
-            opacity: [0.35, 0.55, 0.45, 0.6, 0.35]
+            scale: [1, 1.1, 1.2, 0.95, 1],
+            x: [30, -30, 40, -15, 30],
+            y: [15, -40, 30, -20, 15],
+            opacity: [0.25, 0.4, 0.3, 0.45, 0.25]
           }}
           transition={{ duration: 20, repeat: Infinity, ease: "easeInOut" }}
-          className="absolute bottom-1/4 right-1/4 translate-x-1/2 translate-y-1/2 w-[600px] h-[600px] bg-gradient-to-tr from-amber-200 via-rose-200 to-transparent rounded-full blur-[100px]"
+          className="absolute bottom-[-10%] right-[-10%] w-[550px] h-[550px] bg-gradient-to-br from-indigo-100/40 via-sky-200/30 to-transparent rounded-full blur-[90px]"
         />
-
-        {/* Soft Sky Blue / Turquoise Glass Orb */}
-        <motion.div 
-          animate={{ 
-            scale: [1, 1.2, 0.85, 1.1, 1],
-            x: [20, -60, 40, -10, 20],
-            y: [60, 20, -40, 50, 60],
-            opacity: [0.3, 0.5, 0.4, 0.55, 0.3]
-          }}
-          transition={{ duration: 22, repeat: Infinity, ease: "easeInOut" }}
-          className="absolute top-1/2 right-1/3 w-[550px] h-[550px] bg-gradient-to-tr from-sky-200 via-teal-100 to-transparent rounded-full blur-[120px]"
-        />
-
-        {/* Very subtle noise grid representing tactile paper-gloss finish */}
-        <div className="absolute inset-0 bg-[linear-gradient(rgba(0,0,0,0.003)_1px,transparent_1px),linear-gradient(90deg,rgba(0,0,0,0.003)_1px,transparent_1px)] bg-[size:32px_32px] opacity-100" />
+        {/* Subtle grid pattern */}
+        <div className="absolute inset-0 bg-[linear-gradient(rgba(15,23,42,0.015)_1px,transparent_1px),linear-gradient(90deg,rgba(15,23,42,0.015)_1px,transparent_1px)] bg-[size:40px_40px] opacity-70" />
       </div>
 
-      {/* Main Container */}
+      {/* Main double-sided modern split panel */}
       <motion.div 
-        initial={{ opacity: 0, y: 20 }}
+        initial={{ opacity: 0, y: 30 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ type: "spring", stiffness: 100, damping: 20 }}
-        className="relative z-10 w-full max-w-[325px] flex flex-col items-center"
+        transition={{ type: "spring", stiffness: 90, damping: 20 }}
+        className="relative z-10 w-full max-w-4xl bg-white/80 border border-white rounded-[2.5rem] shadow-[0_24px_60px_rgba(15,23,42,0.06),0_1px_3px_rgba(0,0,0,0.02)] overflow-hidden grid grid-cols-1 md:grid-cols-12 min-h-[660px] md:min-h-[700px] backdrop-blur-xl"
       >
-        {/* Micro HUD Status Bar - Apple Style */}
-        <div className="w-full flex justify-between items-center px-4 mb-4 text-slate-500 text-[10px] font-semibold tracking-wider">
-          <div className="flex items-center gap-1.5 bg-white/70 border border-white/80 py-1 px-3 rounded-full shadow-[0_2px_8px_rgba(0,0,0,0.02),inset_0_1px_1px_rgba(255,255,255,0.7)] backdrop-blur-md">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_6px_rgba(16,185,129,0.5)]" />
-            <span className="text-slate-600 uppercase tracking-widest text-[8px] font-bold">CYC SECURE</span>
-          </div>
-          <div className="text-right text-slate-600 font-semibold tracking-wide bg-white/70 border border-white/80 py-1 px-3 rounded-full shadow-[0_2px_8px_rgba(0,0,0,0.02),inset_0_1px_1px_rgba(255,255,255,0.7)] backdrop-blur-md">
-            {formatClockTime()}
-          </div>
-        </div>
-
-        {/* Liquid Glass Apple Card */}
-        <div className={`w-full transition-all duration-500 rounded-[2.5rem] p-7 relative overflow-hidden backdrop-blur-[45px] ${
-          error 
-            ? 'bg-rose-50/70 border border-rose-300/60 shadow-[0_25px_50px_-12px_rgba(225,29,72,0.15),inset_0_1px_3px_rgba(255,255,255,0.9)]' 
-            : 'bg-white/45 border border-white/70 shadow-[0_25px_60px_-15px_rgba(15,23,42,0.08),inset_0_1px_3px_rgba(255,255,255,0.85)]'
-        }`}>
-          {/* Internal premium specular glass glare reflection overlay */}
-          <div className="absolute inset-x-0 top-0 h-[45%] bg-gradient-to-b from-white/35 via-white/10 to-transparent pointer-events-none rounded-t-[2.5rem]" />
+        
+        {/* LEFT COLUMN: Brand identity, time & status (Tablet / Desktop optimized, collapses elegantly) */}
+        <div className="hidden md:flex md:col-span-5 bg-gradient-to-b from-indigo-950 via-slate-900 to-indigo-950 p-12 flex-col justify-between text-white relative overflow-hidden">
           
-          {/* Soft inner radial ambient lighting */}
-          <div className="absolute inset-0 bg-radial-gradient from-white/20 via-transparent to-transparent pointer-events-none" />
+          {/* Subtle cosmic abstract light leak built purely from CSS */}
+          <div className="absolute inset-0 z-0 bg-[radial-gradient(ellipse_at_top_right,rgba(99,102,241,0.2),transparent_70%)]" />
+          <div className="absolute -bottom-20 -left-20 w-64 h-64 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none" />
 
-          {/* Logo & Identity */}
-          <div className="flex flex-col items-center text-center mb-6 relative z-10">
-            {/* Elegant Liquid Pressed Logo Window */}
+          <div className="relative z-10">
+            {/* Elegant Logo / Specular Window */}
             <motion.div 
-              whileHover={{ scale: 1.04 }}
-              whileTap={{ scale: 0.96 }}
-              className="relative w-22 h-22 mb-4 mt-1 flex items-center justify-center cursor-pointer"
+              whileHover={{ scale: 1.03 }}
+              className="w-16 h-16 bg-white/10 backdrop-blur-lg border border-white/20 rounded-2xl flex items-center justify-center p-2 mb-8 shadow-inner"
             >
-              {/* Glass Rim highlight */}
-              <div className="absolute inset-0 bg-gradient-to-tr from-white/50 via-white/80 to-white/30 rounded-[2rem] border border-white/90 shadow-[0_10px_25px_rgba(0,0,0,0.02),inset_0_1px_3px_rgba(255,255,255,0.91)]" />
-              
-              {/* Actual Content Container */}
-              <div className="relative w-[90%] h-[90%] bg-white/75 border border-white/80 rounded-[1.75rem] flex items-center justify-center p-2.5 shadow-md">
-                {logoUrl ? (
-                  <img src={logoUrl} alt="Logo" referrerPolicy="no-referrer" className="w-[90%] h-[90%] object-contain rounded-2xl" />
-                ) : (
-                  <div className="text-slate-800 flex flex-col items-center leading-none">
-                    <span className="text-[9px] font-black uppercase tracking-[0.25em] mb-1.5 text-indigo-600">CYC POS</span>
-                    <span className="text-2xl font-black tracking-tight bg-gradient-to-b from-slate-900 to-slate-700 bg-clip-text text-transparent">
-                      {businessName ? businessName.substring(0, 3) : 'CYC'}
-                    </span>
-                  </div>
-                )}
-              </div>
+              {logoUrl ? (
+                <img src={logoUrl} alt="Logo" referrerPolicy="no-referrer" className="w-full h-full object-contain rounded-lg" />
+              ) : (
+                <div className="text-white flex flex-col items-center leading-none">
+                  <span className="text-[7px] font-black uppercase tracking-[0.2em] mb-1 text-indigo-300">CYC</span>
+                  <span className="text-xl font-black tracking-tight">
+                    {businessName ? businessName.substring(0, 3) : 'POS'}
+                  </span>
+                </div>
+              )}
             </motion.div>
 
-            <span className="text-[10px] font-bold uppercase tracking-[0.25em] text-indigo-600/80 mb-0.5 font-sans">{getGreeting()}</span>
-            <h1 className="text-base font-extrabold text-slate-800 tracking-wide uppercase">
-              {businessName || 'SISTEMA ACCESO'}
-            </h1>
-          </div>
-
-          {/* PIN Indicators Section */}
-          <div className="mb-6 relative z-10">
-            <motion.div 
-              animate={error ? { x: [-6, 6, -6, 6, -3, 3, 0] } : {}}
-              transition={{ duration: 0.4 }}
-              className="flex gap-3 justify-center items-center h-10"
-            >
-              {[...Array(6)].map((_, i) => {
-                const isActive = i === code.length;
-                const isFilled = i < code.length;
-                return (
-                  <motion.div 
-                    key={i} 
-                    animate={{ 
-                      scale: isActive ? 1.15 : 1,
-                      backgroundColor: error 
-                        ? 'rgba(225, 29, 72, 0.85)' 
-                        : isFilled 
-                          ? 'rgba(79, 70, 229, 0.9)' 
-                          : 'rgba(255, 255, 255, 0.5)',
-                      borderColor: isActive 
-                        ? 'rgba(79, 70, 229, 0.7)' 
-                        : isFilled
-                          ? 'rgba(79, 70, 229, 0.3)'
-                          : 'rgba(0, 0, 0, 0.08)'
-                    }}
-                    className={`w-4 h-4 rounded-full border-[1.5px] flex items-center justify-center transition-all ${
-                      isFilled 
-                        ? (error 
-                            ? 'shadow-[0_0_12px_rgba(225,29,72,0.4),inset_0_1px_1px_rgba(255,255,255,0.4)]' 
-                            : 'shadow-[0_4px_12px_rgba(79,70,229,0.35),inset_0_1px_2px_rgba(255,255,255,0.5)]') 
-                        : (isActive ? 'shadow-[0_2px_8px_rgba(79,70,229,0.18)]' : '')
-                    }`}
-                  >
-                    {isFilled && !error && (
-                      <div className="w-1.5 h-1.5 rounded-full bg-white shadow-[0_1px_2px_rgba(0,0,0,0.15)]" />
-                    )}
-                  </motion.div>
-                );
-              })}
-            </motion.div>
-
-            {/* Notification Text Box */}
-            <div className="h-6 flex items-center justify-center overflow-hidden">
-              <AnimatePresence mode="wait">
-                {error ? (
-                  <motion.div 
-                    initial={{ opacity: 0, y: -4 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0 }}
-                    className="flex items-center justify-center gap-1.5 text-rose-600 font-semibold"
-                  >
-                    <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" />
-                    <span className="text-[10px] uppercase tracking-widest font-black">NÚMERO INCORRECTO</span>
-                  </motion.div>
-                ) : loading ? (
-                  <motion.div 
-                    initial={{ opacity: 0, y: 4 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0 }}
-                    className="flex items-center justify-center gap-2 text-indigo-600 font-semibold"
-                  >
-                    <div className="w-3 h-3 border-2 border-indigo-600/20 border-t-indigo-600 rounded-full animate-spin" />
-                    <span className="text-[10px] uppercase tracking-wider font-extrabold text-indigo-600">INICIANDO...</span>
-                  </motion.div>
-                ) : (
-                  <motion.p 
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 0.6 }}
-                    className="text-center text-[10px] font-black text-slate-500 uppercase tracking-widest"
-                  >
-                    {code.length === 0 ? 'INGRESA TU PIN' : `${code.length} / 6 DÍGITOS`}
-                  </motion.p>
-                )}
-              </AnimatePresence>
+            {/* Time & Greeting */}
+            <div className="space-y-4">
+              <span className="inline-block px-3 py-1 bg-white/10 rounded-full text-[10px] font-bold uppercase tracking-widest text-indigo-300 backdrop-blur-sm border border-white/5">
+                {getGreeting()}
+              </span>
+              <h1 className="text-5xl font-extrabold tracking-tight font-sans text-white/95 leading-none">
+                {businessName || 'Control de Acceso'}
+              </h1>
+              <p className="text-slate-400 text-sm font-medium tracking-wide">
+                Por favor, ingrese su clave de personal de 6 dígitos en el teclado para iniciar su sesión de trabajo.
+              </p>
             </div>
           </div>
 
-          {/* Liquid Glass Numpad */}
-          <div className="grid grid-cols-3 gap-3.5 w-full justify-items-center mb-5 relative z-10">
-            {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((num) => (
-              <motion.button
-                key={num}
-                whileTap={{ scale: 0.88 }}
-                onClick={() => handlePress(num.toString())}
-                disabled={loading}
-                className="w-13 h-13 rounded-full bg-white/50 hover:bg-white/80 active:bg-white/90 border border-white/70 hover:border-white flex flex-col items-center justify-center transition-all shadow-[0_5px_15px_rgba(0,0,0,0.03),inset_0_1px_2px_rgba(255,255,255,0.9)] relative overflow-hidden group hover:shadow-[0_8px_20px_rgba(0,0,0,0.05),inset_0_1px_2px_rgba(255,255,255,0.9)]"
-              >
-                <span className="text-slate-800 text-lg font-bold tracking-tight select-none">{num}</span>
-              </motion.button>
-            ))}
-            
-            {/* Quick Demo Assist Switch or Spacer */}
-            <motion.button
-              whileTap={{ scale: 0.88 }}
-              onClick={() => {
-                clearCode();
-                setCode('012004');
-              }}
-              disabled={loading}
-              title="PIN DEMO: 012004"
-              className="w-13 h-13 rounded-full bg-white/20 hover:bg-white/45 border border-white/40 flex items-center justify-center transition-all text-indigo-500/60 hover:text-indigo-600 shadow-[inset_0_1px_1px_rgba(255,255,255,0.4)]"
-            >
-              <Sparkles className="w-4 h-4" />
-            </motion.button>
-            
-            <motion.button
-              whileTap={{ scale: 0.88 }}
-              onClick={() => handlePress("0")}
-              disabled={loading}
-              className="w-13 h-13 rounded-full bg-white/50 hover:bg-white/80 active:bg-white/90 border border-white/70 hover:border-white flex items-center justify-center transition-all shadow-[0_5px_15px_rgba(0,0,0,0.03),inset_0_1px_2px_rgba(255,255,255,0.9)] text-slate-800 text-lg font-bold tracking-tight"
-            >
-              0
-            </motion.button>
-            
-            <motion.button
-              whileTap={{ scale: 0.88 }}
-              onClick={handleBackspace}
-              disabled={loading}
-              className="w-13 h-13 rounded-full bg-rose-500/10 hover:bg-rose-500/20 active:bg-rose-500/30 border border-rose-300/30 flex items-center justify-center transition-all text-rose-600 shadow-[inset_0_1px_1px_rgba(255,255,255,0.6)]"
-            >
-              <Delete className="w-4 h-4" />
-            </motion.button>
+          {/* Large Clock Display */}
+          <div className="relative z-10 space-y-2 border-t border-white/10 pt-6">
+            <div className="flex items-center gap-2 text-indigo-300 text-xs font-bold uppercase tracking-widest">
+              <Clock className="w-4 h-4" />
+              <span>Hora del sistema</span>
+            </div>
+            <div className="text-4xl font-extrabold tracking-tighter font-mono text-white">
+              {formatClockTime()}
+            </div>
+            <div className="text-xs font-semibold text-slate-400 capitalize">
+              {formatFullDate()}
+            </div>
+          </div>
+        </div>
+
+        {/* RIGHT COLUMN: Large touch numpad login form (Universal & optimized for iPad touch targets!) */}
+        <div className="col-span-12 md:col-span-7 p-8 sm:p-12 md:p-14 flex flex-col justify-between items-center bg-white/30 backdrop-blur-md rounded-r-[2.5rem]">
+          
+          {/* Header Mobile Info (Only visible on small layouts without left panel) */}
+          <div className="w-full md:hidden flex justify-between items-center mb-6 text-slate-500">
+            <div className="flex items-center gap-2 bg-slate-50 border border-slate-200/50 py-1.5 px-3.5 rounded-full shadow-sm">
+              <span className="w-2 h-2 rounded-full bg-indigo-500 animate-pulse" />
+              <span className="text-[9px] font-extrabold tracking-widest uppercase text-slate-600">
+                {businessName || 'CyC POS'}
+              </span>
+            </div>
+            <div className="text-right text-[10px] font-bold tracking-wider text-slate-600">
+              {formatClockTime()}
+            </div>
           </div>
 
-          {/* Quick Submit Access Switch */}
-          {code.length >= 4 && code.length < 6 && (
-            <motion.div 
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="mt-1 relative z-10"
-            >
-              <motion.button
-                onClick={() => handleSubmit()}
-                disabled={loading}
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                className="w-full py-3.5 rounded-2xl bg-indigo-600 hover:bg-indigo-500 text-white font-extrabold text-[11px] tracking-[0.2em] uppercase shadow-[0_8px_25px_rgba(79,70,229,0.3),inset_0_1.5px_2px_rgba(255,255,255,0.35)] flex items-center justify-center gap-2"
+          <div className="w-full max-w-sm flex flex-col items-center my-auto space-y-6 sm:space-y-8">
+            {/* Title & Status */}
+            <div className="text-center space-y-2">
+              <div className="w-12 h-12 bg-indigo-50 rounded-2xl flex items-center justify-center mx-auto mb-2 border border-indigo-100">
+                <Lock className="w-5 h-5 text-indigo-600" />
+              </div>
+              <h2 className="text-xl sm:text-2xl font-extrabold text-slate-800 tracking-tight">
+                Ingreso de Personal
+              </h2>
+              <p className="text-xs text-slate-400 uppercase tracking-widest font-bold">
+                Clave de acceso de 6 dígitos
+              </p>
+            </div>
+
+            {/* PIN Code Indicators */}
+            <div className="space-y-3 w-full">
+              <motion.div 
+                animate={error ? { x: [-10, 10, -10, 10, -5, 5, 0] } : {}}
+                transition={{ duration: 0.4 }}
+                className="flex gap-4 justify-center items-center h-12"
               >
-                <Check className="w-4 h-4" />
-                <span>CONFIRMAR PIN</span>
+                {[...Array(6)].map((_, i) => {
+                  const isActive = i === code.length;
+                  const isFilled = i < code.length;
+                  return (
+                    <motion.div 
+                      key={i} 
+                      animate={{ 
+                        scale: isActive ? 1.2 : 1,
+                        backgroundColor: error 
+                          ? 'rgba(225, 29, 72, 0.95)' 
+                          : isFilled 
+                            ? 'rgba(79, 70, 229, 0.95)' 
+                            : 'rgba(241, 245, 249, 1)',
+                        borderColor: error
+                          ? 'rgba(225, 29, 72, 0.4)'
+                          : isActive 
+                            ? 'rgba(79, 70, 229, 0.8)' 
+                            : 'rgba(226, 232, 240, 1)'
+                      }}
+                      className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${
+                        isFilled 
+                          ? (error 
+                              ? 'shadow-[0_0_12px_rgba(225,29,72,0.35)]' 
+                              : 'shadow-[0_4px_12px_rgba(79,70,229,0.3)]') 
+                          : (isActive ? 'shadow-[0_0_10px_rgba(79,70,229,0.15)]' : '')
+                      }`}
+                    >
+                      {isFilled && !error && (
+                        <div className="w-2 h-2 rounded-full bg-white shadow-[0_1px_2px_rgba(0,0,0,0.1)]" />
+                      )}
+                    </motion.div>
+                  );
+                })}
+              </motion.div>
+
+              {/* Dynamic Notification Message */}
+              <div className="h-6 flex items-center justify-center overflow-hidden">
+                <AnimatePresence mode="wait">
+                  {error ? (
+                    <motion.div 
+                      initial={{ opacity: 0, y: -6 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0 }}
+                      className="flex items-center justify-center gap-1.5 text-rose-600 font-bold"
+                    >
+                      <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                      <span className="text-xs uppercase tracking-wider">PIN INCORRECTO. INTENTE DE NUEVO</span>
+                    </motion.div>
+                  ) : loading ? (
+                    <motion.div 
+                      initial={{ opacity: 0, y: 6 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0 }}
+                      className="flex items-center justify-center gap-2 text-indigo-600 font-bold"
+                    >
+                      <div className="w-3.5 h-3.5 border-2 border-indigo-600/20 border-t-indigo-600 rounded-full animate-spin" />
+                      <span className="text-xs uppercase tracking-wider">VERIFICANDO CREDENCIALES...</span>
+                    </motion.div>
+                  ) : (
+                    <motion.p 
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 0.6 }}
+                      className="text-center text-xs font-bold text-slate-500 uppercase tracking-widest"
+                    >
+                      {code.length === 0 ? 'INGRESE SU CLAVE' : `${code.length} DE 6 DÍGITOS`}
+                    </motion.p>
+                  )}
+                </AnimatePresence>
+              </div>
+            </div>
+
+            {/* GIANT iPad-Optimized tactile Numpad keys (Touch target 80px - 96px) */}
+            <div className="grid grid-cols-3 gap-5 sm:gap-6 w-full justify-items-center relative z-10 select-none">
+              {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((num) => (
+                <motion.button
+                  key={num}
+                  whileTap={{ scale: 0.90 }}
+                  onClick={() => handlePress(num.toString())}
+                  disabled={loading}
+                  className="w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-slate-50 hover:bg-slate-100/80 active:bg-slate-200 border border-slate-200/80 hover:border-slate-300 flex items-center justify-center transition-all shadow-sm relative overflow-hidden group"
+                >
+                  <span className="text-slate-800 text-2xl sm:text-3xl font-extrabold tracking-tight select-none">
+                    {num}
+                  </span>
+                </motion.button>
+              ))}
+              
+              {/* Demo button */}
+              <motion.button
+                whileTap={{ scale: 0.90 }}
+                onClick={() => {
+                  clearCode();
+                  setCode('012004');
+                }}
+                disabled={loading}
+                title="Clave Demo: 012004"
+                className="w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-indigo-50/50 hover:bg-indigo-50 active:bg-indigo-100 border border-indigo-100/70 hover:border-indigo-200 flex items-center justify-center transition-all text-indigo-600 shadow-sm"
+              >
+                <Sparkles className="w-5 h-5 sm:w-6 sm:h-6" />
               </motion.button>
-            </motion.div>
-          )}
+              
+              {/* 0 button */}
+              <motion.button
+                whileTap={{ scale: 0.90 }}
+                onClick={() => handlePress("0")}
+                disabled={loading}
+                className="w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-slate-50 hover:bg-slate-100/80 active:bg-slate-200 border border-slate-200/80 hover:border-slate-300 flex items-center justify-center transition-all shadow-sm text-slate-800 text-2xl sm:text-3xl font-extrabold tracking-tight"
+              >
+                0
+              </motion.button>
+              
+              {/* Backspace button */}
+              <motion.button
+                whileTap={{ scale: 0.90 }}
+                onClick={handleBackspace}
+                disabled={loading}
+                className="w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-rose-50 hover:bg-rose-100 active:bg-rose-200 border border-rose-100/80 flex items-center justify-center transition-all text-rose-600 shadow-sm"
+              >
+                <Delete className="w-5 h-5 sm:w-6 sm:h-6" />
+              </motion.button>
+            </div>
+
+            {/* Quick manual validation button if code is partial */}
+            {code.length >= 4 && code.length < 6 && (
+              <motion.div 
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="w-full relative z-10"
+              >
+                <motion.button
+                  onClick={() => handleSubmit()}
+                  disabled={loading}
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  className="w-full py-4 rounded-2xl bg-indigo-600 hover:bg-indigo-500 text-white font-extrabold text-xs tracking-widest uppercase shadow-md flex items-center justify-center gap-2 transition-all"
+                >
+                  <Check className="w-5 h-5" />
+                  <span>CONFIRMAR CLAVE</span>
+                </motion.button>
+              </motion.div>
+            )}
+
+          </div>
+
+          {/* Locked Badge Footer */}
+          <div className="mt-8 flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest text-slate-400 border-t border-slate-100 pt-5 w-full justify-center">
+            <ShieldCheck className="w-4 h-4 text-indigo-500" />
+            <span>Encriptado Enlace Seguro CyC • v2.6</span>
+          </div>
 
         </div>
 
-        {/* AES Shield Capsule Footer Details */}
-        <motion.div 
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 0.55 }}
-          transition={{ delay: 0.5 }}
-          className="mt-5 flex flex-col items-center space-y-1 text-center text-slate-500"
-        >
-          <div className="flex items-center gap-1.5 text-[9px] font-bold uppercase tracking-[0.25em] text-slate-600">
-            <ShieldCheck className="w-3.5 h-3.5 text-indigo-600" />
-            <span>Encriptado Extremo AES-256</span>
-          </div>
-          <p className="text-[8px] font-semibold text-slate-500 tracking-[0.12em] uppercase">
-            SISTEMA CYC • TERMINAL ACTIVA 2026
-          </p>
-        </motion.div>
       </motion.div>
     </div>
   );
