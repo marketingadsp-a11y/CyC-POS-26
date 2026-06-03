@@ -633,8 +633,12 @@ const POS: React.FC<POSProps> = ({ onOpenQuickAdd }) => {
             amountStr = Math.round(total).toString();
         }
 
+        const baseUrl = zettleAction === 'pay' 
+            ? `${scheme}://pay?` 
+            : `${scheme}://x-callback-url/${zettleAction}?`;
+
         // Zettle custom URL scheme parameters
-        const zettleUrl = `${scheme}://x-callback-url/${zettleAction}?` + 
+        const zettleUrl = baseUrl + 
             `amount=${encodeURIComponent(amountStr)}&` +
             `currency=MXN&` +
             `reference=${encodeURIComponent(ref)}&` +

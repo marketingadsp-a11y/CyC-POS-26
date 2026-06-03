@@ -40,7 +40,7 @@ const Settings: React.FC<{ user: User }> = ({ user }) => {
   const [bankAccountName, setBankAccountName] = useState<string>('');
   const [bankAccountNumber, setBankAccountNumber] = useState<string>('');
   const [zettleScheme, setZettleScheme] = useState<'zettle'|'izettle'>('zettle');
-  const [zettlePath, setZettlePath] = useState<'payment'|'payment-v1'|'payment-v2'>('payment-v2');
+  const [zettlePath, setZettlePath] = useState<'payment'|'payment-v1'|'payment-v2'|'pay'>('payment-v2');
   const [zettleAmountFormat, setZettleAmountFormat] = useState<'decimal'|'cents'|'integer'>('decimal');
   const [isUploadingLogo, setIsUploadingLogo] = useState(false);
   
@@ -651,11 +651,12 @@ const Settings: React.FC<{ user: User }> = ({ user }) => {
                                 <Select
                                     label="RUTA ACCIÓN DE PAGO"
                                     value={zettlePath}
-                                    onChange={(e) => setZettlePath(e.target.value as 'payment' | 'payment-v1' | 'payment-v2')}
+                                    onChange={(e) => setZettlePath(e.target.value as 'payment' | 'payment-v1' | 'payment-v2' | 'pay')}
                                 >
                                     <option value="payment-v2">payment-v2 (Estándar)</option>
                                     <option value="payment-v1">payment-v1 (Zettle Clásico)</option>
                                     <option value="payment">payment (Básico/Simple)</option>
+                                    <option value="pay">pay (Directo Zettle Go)</option>
                                 </Select>
                                 <p className="text-[9px] text-slate-400 mt-1.5 uppercase leading-normal font-semibold">
                                     * Alterne si la app abre pero no procesa la compra.
