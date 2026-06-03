@@ -656,7 +656,17 @@ const POS: React.FC<POSProps> = ({ onOpenQuickAdd }) => {
         console.log("Redirecting to Zettle reader app:", zettleUrl);
         
         // Redirect directly to the Zettle on-device integration App
-        window.location.href = zettleUrl;
+        // On iOS/Safari, using a programmatically clicked <a> element is more robust than window.location.href
+        try {
+            const link = document.createElement('a');
+            link.href = zettleUrl;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        } catch (e) {
+            console.error("Link redirect failed, falling back to window.location.href:", e);
+            window.location.href = zettleUrl;
+        }
     };
   
     const handleCheckout = async () => {
